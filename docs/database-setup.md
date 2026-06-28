@@ -21,9 +21,25 @@ Everything in this guide is done in the **browser** (Supabase dashboard + Google
 Open **SQL Editor → New query** and run this entire block:
 
 ```sql
+-- ── TEAMS ────────────────────────────────────────────────────────────────
+-- Created first so players and matches can reference it.
+-- Each football group gets one row. A fixed UUID is used so the trigger
+-- and seed scripts can reference the default team without a subquery.
+CREATE TABLE teams (
+  team_id     uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name        text NOT NULL,
+  owner_email text NOT NULL,
+  created_at  timestamptz NOT NULL DEFAULT now()
+);
+
+-- Default team (Israel Team 1). Fixed UUID referenced by all seed SQL below.
+INSERT INTO teams (team_id, name, owner_email)
+VALUES ('aaaaaaaa-0000-0000-0000-000000000001', 'Israel Team 1', 'hagai.tregerman@gmail.com');
+
 -- ── PLAYERS ──────────────────────────────────────────────────────────────
 CREATE TABLE players (
   player_id    uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  team_id      uuid NOT NULL REFERENCES teams(team_id),
   full_name    text NOT NULL,
   email        text UNIQUE,
   phone        text UNIQUE,
@@ -39,12 +55,14 @@ CREATE TABLE players (
 -- ── MATCHES ──────────────────────────────────────────────────────────────
 CREATE TABLE matches (
   match_id    uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  team_id     uuid NOT NULL REFERENCES teams(team_id),
   match_date  date NOT NULL,
   label       text,
   is_locked   boolean NOT NULL DEFAULT false
 );
 
 -- ── REPORTS ──────────────────────────────────────────────────────────────
+-- No team_id here — team is inferred via player_id → players.team_id
 CREATE TABLE reports (
   report_id   uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   player_id   uuid NOT NULL REFERENCES players(player_id) ON DELETE CASCADE,
@@ -59,22 +77,26 @@ CREATE TABLE reports (
   UNIQUE (player_id, match_id)
 );
 
--- ── SCORING SETTINGS (single row) ────────────────────────────────────────
+-- ── SCORING SETTINGS (one row per team) ──────────────────────────────────
+-- Each team has its own point values — no shared global setting.
 CREATE TABLE scoring_settings (
-  id               int PRIMARY KEY DEFAULT 1,
+  id               uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  team_id          uuid NOT NULL UNIQUE REFERENCES teams(team_id),
   goal_pts         int NOT NULL DEFAULT 4 CHECK (goal_pts >= 0),
   assist_pts       int NOT NULL DEFAULT 3 CHECK (assist_pts >= 0),
   win_pts          int NOT NULL DEFAULT 2 CHECK (win_pts >= 0),
   clean_sheet_pts  int NOT NULL DEFAULT 2 CHECK (clean_sheet_pts >= 0),
-  updated_at       timestamptz NOT NULL DEFAULT now(),
-  CONSTRAINT single_row CHECK (id = 1)
+  updated_at       timestamptz NOT NULL DEFAULT now()
 );
-INSERT INTO scoring_settings DEFAULT VALUES;
+-- Seed default scoring for Israel Team 1
+INSERT INTO scoring_settings (team_id)
+VALUES ('aaaaaaaa-0000-0000-0000-000000000001');
 
 -- ── ACTIVITY LOG ─────────────────────────────────────────────────────────
 CREATE TABLE activity_log (
   log_id      uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   player_id   uuid REFERENCES players(player_id) ON DELETE SET NULL,
+  team_id     uuid REFERENCES teams(team_id) ON DELETE SET NULL,
   event_type  text NOT NULL CHECK (event_type IN (
                 'register','login','report','avatar',
                 'score_change','block','unblock')),
@@ -91,9 +113,11 @@ New query in SQL Editor:
 
 ```sql
 -- ── PLAYER SCORES (leaderboard — single source of truth) ─────────────────
+-- JOIN scoring_settings ON team_id so each team uses its own point values.
 CREATE OR REPLACE VIEW player_scores AS
 SELECT
   p.player_id,
+  p.team_id,
   p.full_name,
   p.avatar_type,
   p.avatar_value,
@@ -109,11 +133,11 @@ SELECT
     s.clean_sheet_pts * r.clean_sheet
   ), 0)                                        AS total_points
 FROM players p
-LEFT JOIN reports r  ON r.player_id = p.player_id
-CROSS JOIN scoring_settings s
+LEFT JOIN reports r        ON r.player_id = p.player_id
+JOIN scoring_settings s    ON s.team_id   = p.team_id
 WHERE p.is_active = true AND p.is_blocked = false
 GROUP BY
-  p.player_id, p.full_name, p.avatar_type, p.avatar_value,
+  p.player_id, p.team_id, p.full_name, p.avatar_type, p.avatar_value,
   s.goal_pts, s.assist_pts, s.win_pts, s.clean_sheet_pts
 ORDER BY total_points DESC;
 
@@ -126,12 +150,14 @@ WITH scored AS (
     r.player_id,
     r.goals,
     r.assists,
+    m.team_id,
     s.goal_pts * r.goals +
     s.assist_pts * r.assists +
     s.win_pts * r.team_won +
     s.clean_sheet_pts * r.clean_sheet  AS match_pts
   FROM reports r
-  CROSS JOIN scoring_settings s
+  JOIN matches m          ON m.match_id = r.match_id
+  JOIN scoring_settings s ON s.team_id  = m.team_id
 ),
 ranked AS (
   SELECT *,
@@ -141,7 +167,7 @@ ranked AS (
     ) AS rnk
   FROM scored
 )
-SELECT match_id, player_id, match_pts
+SELECT match_id, player_id, team_id, match_pts
 FROM ranked
 WHERE rnk = 1;
 -- Multiple rows per match_id = co-MVPs (intentional per SRS §3.8.1)
@@ -150,6 +176,7 @@ WHERE rnk = 1;
 CREATE OR REPLACE VIEW all_time_mvp AS
 SELECT
   pm.player_id,
+  pm.team_id,
   p.full_name,
   p.avatar_type,
   p.avatar_value,
@@ -158,7 +185,7 @@ SELECT
 FROM practice_mvp pm
 JOIN players       p  ON p.player_id  = pm.player_id
 JOIN player_scores ps ON ps.player_id = pm.player_id
-GROUP BY pm.player_id, p.full_name, p.avatar_type, p.avatar_value, ps.total_points
+GROUP BY pm.player_id, pm.team_id, p.full_name, p.avatar_type, p.avatar_value, ps.total_points
 ORDER BY mvp_titles DESC, total_points DESC;
 ```
 
@@ -166,17 +193,28 @@ ORDER BY mvp_titles DESC, total_points DESC;
 
 ## Step 4 — Enable Row-Level Security
 
-> **Key design decision:** `player_id = auth.uid()` — every player's primary key matches their Supabase Auth UID, assigned at first login. RLS policies therefore need no joins.
+> **Key design decisions:**
+> - `player_id = auth.uid()` — each player's primary key matches their Supabase Auth UID.
+> - `my_team_id()` helper — all team-scoping policies call this one function so they stay readable.
+> - Players can only read data belonging to their own team.
 
 ```sql
--- Enable RLS on all tables
-ALTER TABLE players          ENABLE ROW LEVEL SECURITY;
+-- Enable RLS on all tables (including the new teams table)
+ALTER TABLE teams             ENABLE ROW LEVEL SECURITY;
+ALTER TABLE players           ENABLE ROW LEVEL SECURITY;
 ALTER TABLE matches           ENABLE ROW LEVEL SECURITY;
 ALTER TABLE reports           ENABLE ROW LEVEL SECURITY;
 ALTER TABLE scoring_settings  ENABLE ROW LEVEL SECURITY;
 ALTER TABLE activity_log      ENABLE ROW LEVEL SECURITY;
 
--- Admin helper (checks auth.users directly — works before a player row exists)
+-- Helper: resolves the calling user's team (called once per query, cached)
+CREATE OR REPLACE FUNCTION my_team_id() RETURNS uuid
+  LANGUAGE sql SECURITY DEFINER STABLE AS $$
+    SELECT team_id FROM players WHERE player_id = auth.uid()
+  $$;
+
+-- Helper: is the calling user the app admin?
+-- Checks auth.users directly so it works before the player row exists.
 CREATE OR REPLACE FUNCTION is_admin() RETURNS boolean
   LANGUAGE sql SECURITY DEFINER AS $$
     SELECT EXISTS (
@@ -186,27 +224,32 @@ CREATE OR REPLACE FUNCTION is_admin() RETURNS boolean
     );
   $$;
 
--- PLAYERS
-CREATE POLICY "players_read"       ON players FOR SELECT TO authenticated USING (true);
+-- TEAMS: all authenticated users can read; admin can write
+CREATE POLICY "teams_read"        ON teams FOR SELECT TO authenticated USING (true);
+CREATE POLICY "teams_admin_write" ON teams FOR ALL    TO authenticated USING (is_admin());
+
+-- PLAYERS: scoped to the caller's team
+CREATE POLICY "players_read"       ON players FOR SELECT TO authenticated USING (team_id = my_team_id());
 CREATE POLICY "players_insert_own" ON players FOR INSERT TO authenticated WITH CHECK (player_id = auth.uid());
 CREATE POLICY "players_update_own" ON players FOR UPDATE TO authenticated USING (player_id = auth.uid());
 CREATE POLICY "players_admin_all"  ON players FOR ALL    TO authenticated USING (is_admin());
 
--- MATCHES
-CREATE POLICY "matches_read"        ON matches FOR SELECT TO authenticated USING (true);
+-- MATCHES: scoped to the caller's team
+CREATE POLICY "matches_read"        ON matches FOR SELECT TO authenticated USING (team_id = my_team_id());
 CREATE POLICY "matches_admin_write" ON matches FOR ALL    TO authenticated USING (is_admin());
 
--- REPORTS
-CREATE POLICY "reports_read"       ON reports FOR SELECT TO authenticated USING (true);
+-- REPORTS: readable if the report belongs to someone in the caller's team
+CREATE POLICY "reports_read" ON reports FOR SELECT TO authenticated
+  USING (player_id IN (SELECT player_id FROM players WHERE team_id = my_team_id()));
 CREATE POLICY "reports_own_insert" ON reports FOR INSERT TO authenticated WITH CHECK (player_id = auth.uid());
 CREATE POLICY "reports_own_update" ON reports FOR UPDATE TO authenticated USING (player_id = auth.uid());
 CREATE POLICY "reports_own_delete" ON reports FOR DELETE TO authenticated USING (player_id = auth.uid());
 
--- SCORING_SETTINGS
-CREATE POLICY "scoring_read"        ON scoring_settings FOR SELECT TO authenticated USING (true);
+-- SCORING_SETTINGS: scoped to the caller's team
+CREATE POLICY "scoring_read"        ON scoring_settings FOR SELECT TO authenticated USING (team_id = my_team_id());
 CREATE POLICY "scoring_admin_write" ON scoring_settings FOR UPDATE TO authenticated USING (is_admin());
 
--- ACTIVITY_LOG (admin only)
+-- ACTIVITY_LOG: admin only
 CREATE POLICY "log_admin_only" ON activity_log FOR ALL TO authenticated USING (is_admin());
 ```
 
@@ -267,9 +310,10 @@ This trigger fires when any Google user signs in for the first time, creating th
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER AS $$
 BEGIN
-  INSERT INTO public.players (player_id, full_name, email, role)
+  INSERT INTO public.players (player_id, team_id, full_name, email, role)
   VALUES (
     NEW.id,
+    'aaaaaaaa-0000-0000-0000-000000000001',  -- default team: Israel Team 1
     COALESCE(NEW.raw_user_meta_data->>'full_name', split_part(NEW.email, '@', 1)),
     NEW.email,
     CASE WHEN NEW.email = 'hagai.tregerman@gmail.com' THEN 'admin' ELSE 'player' END
@@ -289,7 +333,8 @@ CREATE TRIGGER on_auth_user_created
 ## Step 8 — Verify schema (no data yet)
 
 ```sql
-SELECT * FROM scoring_settings;       -- 1 row: 4/3/2/2
+SELECT * FROM teams;                  -- 1 row: Israel Team 1
+SELECT * FROM scoring_settings;       -- 1 row: team_id=aaaaaaaa..., 4/3/2/2
 SELECT * FROM player_scores;          -- 0 rows
 SELECT * FROM practice_mvp  LIMIT 1; -- 0 rows, no error
 SELECT * FROM all_time_mvp  LIMIT 1; -- 0 rows, no error
@@ -304,21 +349,21 @@ SELECT * FROM all_time_mvp  LIMIT 1; -- 0 rows, no error
 Save this as **"Seed mock data"** in Supabase SQL Editor.
 
 ```sql
--- 6 mock players
-INSERT INTO players (player_id, full_name, email, role, avatar_type) VALUES
-  ('11111111-0000-0000-0000-000000000001', 'Steve Cohen',  'steve@test.com',  'player', 'initials'),
-  ('11111111-0000-0000-0000-000000000002', 'Daniel Levi',  'daniel@test.com', 'player', 'initials'),
-  ('11111111-0000-0000-0000-000000000003', 'Avi Mizrahi',  'avi@test.com',    'player', 'initials'),
-  ('11111111-0000-0000-0000-000000000004', 'Ron Shapiro',  'ron@test.com',    'player', 'initials'),
-  ('11111111-0000-0000-0000-000000000005', 'Yoni Peretz',  'yoni@test.com',   'player', 'initials'),
-  ('11111111-0000-0000-0000-000000000006', 'Tal Friedman', 'tal@test.com',    'player', 'initials');
+-- 6 mock players — all assigned to Israel Team 1
+INSERT INTO players (player_id, team_id, full_name, email, role, avatar_type) VALUES
+  ('11111111-0000-0000-0000-000000000001', 'aaaaaaaa-0000-0000-0000-000000000001', 'Steve Cohen',  'steve@test.com',  'player', 'initials'),
+  ('11111111-0000-0000-0000-000000000002', 'aaaaaaaa-0000-0000-0000-000000000001', 'Daniel Levi',  'daniel@test.com', 'player', 'initials'),
+  ('11111111-0000-0000-0000-000000000003', 'aaaaaaaa-0000-0000-0000-000000000001', 'Avi Mizrahi',  'avi@test.com',    'player', 'initials'),
+  ('11111111-0000-0000-0000-000000000004', 'aaaaaaaa-0000-0000-0000-000000000001', 'Ron Shapiro',  'ron@test.com',    'player', 'initials'),
+  ('11111111-0000-0000-0000-000000000005', 'aaaaaaaa-0000-0000-0000-000000000001', 'Yoni Peretz',  'yoni@test.com',   'player', 'initials'),
+  ('11111111-0000-0000-0000-000000000006', 'aaaaaaaa-0000-0000-0000-000000000001', 'Tal Friedman', 'tal@test.com',    'player', 'initials');
 
--- 4 training sessions
-INSERT INTO matches (match_id, match_date, label) VALUES
-  ('22222222-0000-0000-0000-000000000001', '2026-06-10', 'Tuesday Training'),
-  ('22222222-0000-0000-0000-000000000002', '2026-06-17', 'Tuesday Training'),
-  ('22222222-0000-0000-0000-000000000003', '2026-06-24', 'Tuesday Training'),
-  ('22222222-0000-0000-0000-000000000004', '2026-07-01', 'Tuesday Training');
+-- 4 training sessions — all for Israel Team 1
+INSERT INTO matches (match_id, team_id, match_date, label) VALUES
+  ('22222222-0000-0000-0000-000000000001', 'aaaaaaaa-0000-0000-0000-000000000001', '2026-06-10', 'Tuesday Training'),
+  ('22222222-0000-0000-0000-000000000002', 'aaaaaaaa-0000-0000-0000-000000000001', '2026-06-17', 'Tuesday Training'),
+  ('22222222-0000-0000-0000-000000000003', 'aaaaaaaa-0000-0000-0000-000000000001', '2026-06-24', 'Tuesday Training'),
+  ('22222222-0000-0000-0000-000000000004', 'aaaaaaaa-0000-0000-0000-000000000001', '2026-07-01', 'Tuesday Training');
 
 -- Reports: (goals, assists, team_won, clean_sheet, team_color)
 -- Points formula: 4*G + 3*A + 2*W + 2*CS
@@ -403,10 +448,12 @@ ORDER BY m.match_date;
 
 **"Sim: Scoring change impact"** — verify that changing a multiplier re-ranks everyone
 ```sql
-UPDATE scoring_settings SET goal_pts = 5 WHERE id = 1;
+UPDATE scoring_settings SET goal_pts = 5
+  WHERE team_id = 'aaaaaaaa-0000-0000-0000-000000000001';
 SELECT full_name, total_points FROM player_scores ORDER BY total_points DESC;
 -- Reset after testing:
-UPDATE scoring_settings SET goal_pts = 4 WHERE id = 1;
+UPDATE scoring_settings SET goal_pts = 4
+  WHERE team_id = 'aaaaaaaa-0000-0000-0000-000000000001';
 ```
 
 ---
@@ -418,32 +465,49 @@ Save as **"RESET — clear all data"** in Supabase SQL Editor.
 Wipes all players, matches, reports and log entries. Schema, views, RLS policies, trigger and scoring defaults survive untouched.
 
 ```sql
-TRUNCATE TABLE activity_log, reports, matches, players CASCADE;
+-- Clear player/match data. teams and scoring_settings survive (one row each).
+TRUNCATE TABLE players, matches CASCADE;
+-- CASCADE wipes reports and activity_log automatically (FK ON DELETE CASCADE).
 
--- Confirm everything is empty
-SELECT 'players'      AS tbl, COUNT(*) FROM players
+-- Confirm
+SELECT 'teams'             AS tbl, COUNT(*) FROM teams
 UNION ALL
-SELECT 'matches',              COUNT(*) FROM matches
+SELECT 'scoring_settings',          COUNT(*) FROM scoring_settings
 UNION ALL
-SELECT 'reports',              COUNT(*) FROM reports
+SELECT 'players',                   COUNT(*) FROM players
 UNION ALL
-SELECT 'activity_log',         COUNT(*) FROM activity_log;
-
--- Scoring settings are preserved (not truncated)
-SELECT * FROM scoring_settings;
+SELECT 'matches',                   COUNT(*) FROM matches
+UNION ALL
+SELECT 'reports',                   COUNT(*) FROM reports
+UNION ALL
+SELECT 'activity_log',              COUNT(*) FROM activity_log;
+-- Expected: teams=1, scoring_settings=1, all others=0
 ```
 
-After reset, the next Google login triggers `handle_new_user` and creates the first real player row. Your email gets `role = 'admin'` automatically.
+After reset: the "Israel Team 1" team row and its scoring settings survive. The next Google login triggers `handle_new_user` and creates the first real player row assigned to that team. Your email gets `role = 'admin'` automatically.
+
+**To onboard a second football group in the future:**
+```sql
+-- Insert a new team
+INSERT INTO teams (team_id, name, owner_email)
+VALUES (gen_random_uuid(), 'Tel Aviv Team 1', 'newcoach@email.com');
+
+-- Give it its own scoring settings
+INSERT INTO scoring_settings (team_id)
+SELECT team_id FROM teams WHERE name = 'Tel Aviv Team 1';
+```
+Then update the `handle_new_user` trigger (or use invite links) to assign their players to the correct `team_id`.
 
 ---
 
 ## Verification Checklist
 
 ### Schema
-- [ ] `scoring_settings` has 1 row: goal_pts=4, assist_pts=3, win_pts=2, clean_sheet_pts=2
-- [ ] All 5 tables exist with correct columns
+- [ ] `teams` has 1 row: "Israel Team 1"
+- [ ] `scoring_settings` has 1 row linked to that team: 4/3/2/2
+- [ ] All 6 tables exist with correct columns (`teams`, `players`, `matches`, `reports`, `scoring_settings`, `activity_log`)
 - [ ] All 3 views return without error
-- [ ] RLS is ON for all 5 tables
+- [ ] RLS is ON for all 6 tables
 
 ### Auth & Storage
 - [ ] `avatars` bucket is public
