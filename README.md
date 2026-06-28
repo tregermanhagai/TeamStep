@@ -93,11 +93,12 @@ npm create vite@latest . -- --template react-ts
 npm install @supabase/supabase-js react-router-dom framer-motion recharts
 ```
 
-Create `.env.local` with your Supabase keys:
+Copy the example env file and fill in your Supabase keys:
+```bash
+cp .env.example .env.local
 ```
-VITE_SUPABASE_URL=https://<ref>.supabase.co
-VITE_SUPABASE_ANON_KEY=<anon-key>
-```
+Then edit `.env.local` — values are in **Supabase → Project Settings → API**.
+`.env.local` is git-ignored and will never be committed.
 
 **Step 3 — Connect Supabase**
 ```ts
