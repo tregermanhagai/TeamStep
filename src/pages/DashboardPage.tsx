@@ -44,16 +44,16 @@ export function DashboardPage() {
           <p className="text-slate-400 text-sm">{t('welcomeBack')}</p>
           <h1 className="text-lg font-bold text-white">{player?.full_name ?? '—'}</h1>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-stretch gap-2">
           {myRank && (
-            <div className="bg-card rounded-2xl px-3 py-1.5 text-center">
+            <div className="bg-card rounded-2xl px-3 py-1.5 text-center flex flex-col justify-center">
               <p className="text-xs text-slate-400">{t('rank')}</p>
               <p className="text-accent font-bold text-lg leading-none">#{myRank}</p>
             </div>
           )}
           <button
             onClick={() => supabase.auth.signOut()}
-            className="bg-card text-slate-400 text-xs px-3 py-2 rounded-xl border border-slate-700 hover:text-white transition-colors"
+            className="bg-card text-slate-400 text-xs px-3 rounded-xl border border-slate-700 hover:text-white transition-colors"
           >
             {t('signOut')}
           </button>
@@ -96,7 +96,7 @@ export function DashboardPage() {
           <div className="flex flex-col items-center gap-2 mt-5">
             {isSession && (
               <p className="text-xs text-accent font-medium">
-                {src.label ?? src.match_date}
+                {src.label === 'Training Session' ? t('trainingSession') : (src.label ?? src.match_date)}
                 <button onClick={() => setSelectedSession(null)} className="ml-2 text-slate-500 hover:text-white">✕</button>
               </p>
             )}

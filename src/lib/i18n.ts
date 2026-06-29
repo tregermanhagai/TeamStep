@@ -43,6 +43,7 @@ export const translations = {
     continuousTraining:   'Continuous Training',
     leaderboardTitle:     'Leaderboard',
     leaderboardSubtitle:  'All-time rankings',
+    trainingSession:      'Training Session',
   },
   he: {
     tagline:              'עקוב אחרי הביצועים שלך במגרש',
@@ -86,6 +87,7 @@ export const translations = {
     continuousTraining:   'אימונים רצופים',
     leaderboardTitle:     'טבלת מובילים',
     leaderboardSubtitle:  'דירוג כל האימונים',
+    trainingSession:      'אימון',
   },
 } as const
 
