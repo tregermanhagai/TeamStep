@@ -1,0 +1,88 @@
+import { Link } from 'react-router-dom'
+import { useSession } from '../hooks/useSession'
+import { useMyStats } from '../hooks/useMyStats'
+import { useLeaderboard } from '../hooks/useLeaderboard'
+import { Avatar } from '../components/Avatar'
+import { StatPill } from '../components/StatPill'
+import { supabase } from '../lib/supabase'
+
+export function ProfilePage() {
+  const { player, session, isAdmin } = useSession()
+  const { data: history } = useMyStats(player?.player_id)
+  const { data: leaderboard } = useLeaderboard()
+
+  const me = leaderboard.find((p) => p.player_id === player?.player_id)
+  const myRank = me ? leaderboard.indexOf(me) + 1 : null
+
+  async function signOut() {
+    await supabase.auth.signOut()
+  }
+
+  if (!player) return null
+
+  return (
+    <div className="min-h-screen bg-bg pb-nav">
+      <div className="px-4 pt-12 pb-6 flex flex-col items-center gap-4">
+        <Avatar player={player} size={80} />
+        <div className="text-center">
+          <h1 className="text-xl font-bold text-white">{player.full_name}</h1>
+          <p className="text-slate-400 text-sm">{session?.user?.email}</p>
+          {myRank && <p className="text-accent text-sm font-medium mt-1">Rank #{myRank}</p>}
+        </div>
+      </div>
+
+      {me && (
+        <div className="flex gap-3 overflow-x-auto px-4 pb-2">
+          <StatPill label="Points" value={me.total_points} color="#06C8E0" />
+          <StatPill label="Goals" value={me.total_goals} color="#22C55E" />
+          <StatPill label="Assists" value={me.total_assists} color="#F59E0B" />
+          <StatPill label="Played" value={me.matches_played} color="#8B5CF6" />
+        </div>
+      )}
+
+      <div className="mx-4 mt-5 bg-card rounded-2xl divide-y divide-slate-700/50">
+        <div className="px-4 py-3">
+          <p className="text-xs text-slate-400">Sessions played</p>
+          <p className="text-white font-semibold">{history.length}</p>
+        </div>
+        <div className="px-4 py-3">
+          <p className="text-xs text-slate-400">Best session</p>
+          <p className="text-white font-semibold">
+            {history.length > 0 ? Math.max(...history.map((h) => h.match_pts)) + ' pts' : '—'}
+          </p>
+        </div>
+        <div className="px-4 py-3">
+          <p className="text-xs text-slate-400">Role</p>
+          <p className="text-white font-semibold capitalize">{player.role}</p>
+        </div>
+      </div>
+
+      {isAdmin && (
+        <div className="mx-4 mt-5">
+          <p className="text-xs text-accent font-semibold uppercase tracking-wider mb-2">Admin</p>
+          <div className="bg-card rounded-2xl divide-y divide-slate-700/50">
+            <Link
+              to="/admin/scoring"
+              className="flex items-center justify-between px-4 py-3 hover:bg-slate-700/30 rounded-t-2xl transition-colors"
+            >
+              <div>
+                <p className="text-sm text-white font-medium">Scoring Rules</p>
+                <p className="text-xs text-slate-400">Edit multipliers &amp; custom categories</p>
+              </div>
+              <span className="text-slate-500 text-lg">›</span>
+            </Link>
+          </div>
+        </div>
+      )}
+
+      <div className="px-4 mt-5 mb-2">
+        <button
+          onClick={signOut}
+          className="w-full bg-card border border-slate-700 text-slate-400 font-semibold py-3 rounded-2xl active:scale-95 transition-all"
+        >
+          Sign out
+        </button>
+      </div>
+    </div>
+  )
+}
