@@ -94,12 +94,11 @@ export function DashboardPage() {
         const isSession = !!src
         return (
           <div className="flex flex-col items-center gap-2 mt-5">
-            {isSession && (
-              <p className="text-xs text-accent font-medium">
-                {src.label === 'Training Session' ? t('trainingSession') : (src.label ?? src.match_date)}
-                <button onClick={() => setSelectedSession(null)} className="ml-2 text-slate-500 hover:text-white">✕</button>
-              </p>
-            )}
+            <p className="text-xs text-accent font-medium">
+              {selectedSession
+                ? (selectedSession.data.label === 'Training Session' ? t('trainingSession') : (selectedSession.data.label ?? selectedSession.data.match_date))
+                : filter === 'last' ? t('lastPractice') : t('overall')}
+            </p>
             <div className="flex flex-wrap gap-3 px-4 pb-1 justify-center">
               <StatPill label={t('goals')}       value={isSession ? src.goals       : me.total_goals}  color="#22C55E" />
               <StatPill label={t('assists')}     value={isSession ? src.assists      : me.total_assists} color="#06C8E0" />

@@ -44,6 +44,7 @@ export const translations = {
     leaderboardTitle:     'Leaderboard',
     leaderboardSubtitle:  'All-time rankings',
     trainingSession:      'Training Session',
+    overall:              'Overall',
   },
   he: {
     tagline:              'עקוב אחרי הביצועים שלך במגרש',
@@ -88,6 +89,7 @@ export const translations = {
     leaderboardTitle:     'טבלת מובילים',
     leaderboardSubtitle:  'דירוג כל האימונים',
     trainingSession:      'אימון',
+    overall:              'כללי',
   },
 } as const
 
