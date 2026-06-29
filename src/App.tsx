@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { LocaleProvider } from './contexts/LocaleContext'
 import { useSession } from './hooks/useSession'
 import { LoginPage } from './pages/LoginPage'
 import { OnboardingPage } from './pages/OnboardingPage'
@@ -22,6 +23,7 @@ function AuthGuard({ children, skipOnboardingCheck = false }: {
 
 export default function App() {
   return (
+    <LocaleProvider>
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
@@ -52,5 +54,6 @@ export default function App() {
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </BrowserRouter>
+    </LocaleProvider>
   )
 }

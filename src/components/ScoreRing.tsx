@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import { useLocale } from '../contexts/LocaleContext'
 
 interface Props {
   userPoints: number
@@ -11,6 +12,7 @@ const STROKE = 10
 const CIRCUMFERENCE = 2 * Math.PI * R
 
 export function ScoreRing({ userPoints, teamAvg, maxPoints }: Props) {
+  const { t } = useLocale()
   const pct = maxPoints > 0 ? Math.min(userPoints / maxPoints, 1) : 0
   const offset = CIRCUMFERENCE * (1 - pct)
 
@@ -47,9 +49,9 @@ export function ScoreRing({ userPoints, teamAvg, maxPoints }: Props) {
         >
           {userPoints}
         </motion.span>
-        <span className="text-xs text-slate-400 mt-0.5">pts</span>
+        <span className="text-xs text-slate-400 mt-0.5">{t('pts')}</span>
         <span className="text-xs text-slate-500 mt-1">
-          avg <span className="text-accent font-medium">{Math.round(teamAvg)}</span>
+          {t('avg')} <span className="text-accent font-medium">{Math.round(teamAvg)}</span>
         </span>
       </div>
     </div>

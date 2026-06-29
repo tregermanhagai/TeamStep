@@ -3,10 +3,20 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useSession } from '../hooks/useSession'
 import { useCustomCategories } from '../hooks/useCustomCategories'
-import { Match } from '../types'
+import { useLocale } from '../contexts/LocaleContext'
 
 type TeamColor = 'Pink' | 'Blue' | 'Yellow' | 'Other'
 const COLORS: TeamColor[] = ['Pink', 'Blue', 'Yellow', 'Other']
+
+function todayStr() {
+  return new Date().toISOString().split('T')[0]
+}
+
+function minDateStr() {
+  const d = new Date()
+  d.setDate(d.getDate() - 7)
+  return d.toISOString().split('T')[0]
+}
 
 function ChipSelector({
   label, value, onChange, max = 5,
@@ -34,12 +44,16 @@ function ChipSelector({
 }
 
 export function ReportPage() {
+  const { t } = useLocale()
   const { player } = useSession()
   const navigate = useNavigate()
   const { data: customCategories } = useCustomCategories()
 
-  const [matches, setMatches] = useState<Match[]>([])
+  const [selectedDate, setSelectedDate] = useState(todayStr())
   const [matchId, setMatchId] = useState('')
+  const [loadingMatch, setLoadingMatch] = useState(true)
+  const [matchLocked, setMatchLocked] = useState(false)
+
   const [teamWon, setTeamWon] = useState(0)
   const [goals, setGoals] = useState(0)
   const [assists, setAssists] = useState(0)
@@ -50,18 +64,26 @@ export function ReportPage() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
 
-  useEffect(() => {
-    supabase
-      .from('matches')
-      .select('*')
-      .eq('is_locked', false)
-      .order('match_date', { ascending: false })
-      .limit(10)
-      .then(({ data }) => {
-        setMatches(data ?? [])
-        if (data && data.length > 0) setMatchId(data[0].match_id)
-      })
-  }, [])
+  useEffect(() => { handleDateChange(todayStr()) }, [])
+
+  async function handleDateChange(date: string) {
+    setSelectedDate(date)
+    setLoadingMatch(true)
+    setMatchId('')
+    setMatchLocked(false)
+    setError(null)
+
+    const { data: matchUuid, error: rpcErr } = await supabase
+      .rpc('find_or_create_match', { p_date: date })
+
+    if (rpcErr) {
+      setError('Could not load session for this date.')
+    } else if (matchUuid) {
+      setMatchId(matchUuid as string)
+    }
+
+    setLoadingMatch(false)
+  }
 
   function setCustomValue(categoryId: string, value: number) {
     setCustomValues((prev) => ({ ...prev, [categoryId]: value }))
@@ -108,12 +130,7 @@ export function ReportPage() {
       const { error: customErr } = await supabase
         .from('report_custom_stats')
         .upsert(customRows, { onConflict: 'report_id,category_id' })
-
-      if (customErr) {
-        setError(customErr.message)
-        setSubmitting(false)
-        return
-      }
+      if (customErr) { setError(customErr.message); setSubmitting(false); return }
     }
 
     setSuccess(true)
@@ -125,7 +142,7 @@ export function ReportPage() {
     return (
       <div className="min-h-screen bg-bg flex flex-col items-center justify-center gap-4">
         <div className="text-5xl">✅</div>
-        <p className="text-white font-semibold text-lg">Stats submitted!</p>
+        <p className="text-white font-semibold text-lg">{t('statsSubmitted')}</p>
       </div>
     )
   }
@@ -133,76 +150,86 @@ export function ReportPage() {
   return (
     <div className="min-h-screen bg-bg pb-nav">
       <div className="px-4 pt-12 pb-4">
-        <h1 className="text-xl font-bold text-white">Report Stats</h1>
-        <p className="text-slate-400 text-sm mt-0.5">Submit your performance for a session</p>
+        <h1 className="text-xl font-bold text-white">{t('reportTitle')}</h1>
+        <p className="text-slate-400 text-sm mt-0.5">{t('reportSubtitle')}</p>
       </div>
 
       <div className="px-4">
-        {/* Session picker */}
+        {/* Date picker */}
         <div className="mb-5">
-          <p className="text-sm text-slate-400 mb-2">Session</p>
-          <select
-            value={matchId}
-            onChange={(e) => setMatchId(e.target.value)}
+          <p className="text-sm text-slate-400 mb-2">{t('practiceDate')}</p>
+          <input
+            type="date"
+            value={selectedDate}
+            min={minDateStr()}
+            max={todayStr()}
+            onChange={(e) => handleDateChange(e.target.value)}
             className="w-full bg-card text-white rounded-xl px-3 py-3 text-sm border border-slate-700 focus:outline-none focus:border-accent"
-          >
-            {matches.map((m) => (
-              <option key={m.match_id} value={m.match_id}>
-                {m.match_date} {m.label ? `— ${m.label}` : ''}
-              </option>
-            ))}
-            {matches.length === 0 && <option disabled>No open sessions</option>}
-          </select>
-        </div>
-
-        {/* Built-in stats — win first (highest value), then personal */}
-        <ChipSelector label="Games Won" value={teamWon} onChange={setTeamWon} />
-        <ChipSelector label="Goals" value={goals} onChange={setGoals} />
-        <ChipSelector label="Assists" value={assists} onChange={setAssists} />
-        <ChipSelector label="Clean Sheets" value={cleanSheet} onChange={setCleanSheet} />
-
-        {/* Custom categories */}
-        {customCategories.map((cat) => (
-          <ChipSelector
-            key={cat.category_id}
-            label={`${cat.label} (+${cat.pts_per_unit} pt${cat.pts_per_unit !== 1 ? 's' : ''})`}
-            value={customValues[cat.category_id] ?? 0}
-            onChange={(v) => setCustomValue(cat.category_id, v)}
-            max={cat.max_per_match}
           />
-        ))}
-
-        {/* Team colour */}
-        <div className="mb-6">
-          <p className="text-sm text-slate-400 mb-2">Team Color</p>
-          <div className="flex gap-2 flex-wrap">
-            {COLORS.map((c) => (
-              <button
-                key={c}
-                onClick={() => setTeamColor(c)}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                  teamColor === c ? 'bg-accent text-bg' : 'bg-card text-slate-400'
-                }`}
-              >
-                {c}
-              </button>
-            ))}
-          </div>
+          {loadingMatch && (
+            <p className="text-xs text-slate-500 mt-1.5">{t('loadingSession')}</p>
+          )}
+          {matchLocked && (
+            <p className="text-xs text-red-400 mt-1.5">{t('sessionLocked')}</p>
+          )}
         </div>
 
-        {error && (
-          <div className="bg-red-900/30 border border-red-800 rounded-xl px-4 py-3 text-red-300 text-sm mb-4">
+        {/* Stats — only shown when a valid match is loaded */}
+        {matchId && !matchLocked && (
+          <>
+            <ChipSelector label={t('gamesWon')}    value={teamWon}     onChange={setTeamWon} />
+            <ChipSelector label={t('goals')}        value={goals}       onChange={setGoals} />
+            <ChipSelector label={t('assists')}      value={assists}     onChange={setAssists} />
+            <ChipSelector label={t('cleanSheets')}  value={cleanSheet}  onChange={setCleanSheet} />
+
+            {customCategories.map((cat) => (
+              <ChipSelector
+                key={cat.category_id}
+                label={`${cat.label} (+${cat.pts_per_unit} pt${cat.pts_per_unit !== 1 ? 's' : ''})`}
+                value={customValues[cat.category_id] ?? 0}
+                onChange={(v) => setCustomValue(cat.category_id, v)}
+                max={cat.max_per_match}
+              />
+            ))}
+
+            <div className="mb-6">
+              <p className="text-sm text-slate-400 mb-2">{t('teamColor')}</p>
+              <div className="flex gap-2 flex-wrap">
+                {COLORS.map((c) => (
+                  <button
+                    key={c}
+                    onClick={() => setTeamColor(c)}
+                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                      teamColor === c ? 'bg-accent text-bg' : 'bg-card text-slate-400'
+                    }`}
+                  >
+                    {c}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {error && (
+              <div className="bg-red-900/30 border border-red-800 rounded-xl px-4 py-3 text-red-300 text-sm mb-4">
+                {error}
+              </div>
+            )}
+
+            <button
+              onClick={submit}
+              disabled={submitting}
+              className="w-full bg-accent text-bg font-bold py-4 rounded-2xl text-base active:scale-95 transition-all disabled:opacity-50"
+            >
+              {submitting ? t('submitting') : t('submitStats')}
+            </button>
+          </>
+        )}
+
+        {error && !matchId && (
+          <div className="bg-red-900/30 border border-red-800 rounded-xl px-4 py-3 text-red-300 text-sm">
             {error}
           </div>
         )}
-
-        <button
-          onClick={submit}
-          disabled={submitting || !matchId}
-          className="w-full bg-accent text-bg font-bold py-4 rounded-2xl text-base active:scale-95 transition-all disabled:opacity-50"
-        >
-          {submitting ? 'Submitting…' : 'Submit Stats'}
-        </button>
       </div>
     </div>
   )

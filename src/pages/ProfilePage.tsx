@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useSession } from '../hooks/useSession'
+import { useLocale } from '../contexts/LocaleContext'
 import { useMyStats } from '../hooks/useMyStats'
 import { useLeaderboard } from '../hooks/useLeaderboard'
 import { Avatar } from '../components/Avatar'
@@ -7,6 +8,7 @@ import { StatPill } from '../components/StatPill'
 import { supabase } from '../lib/supabase'
 
 export function ProfilePage() {
+  const { t, locale, setLocale } = useLocale()
   const { player, session, isAdmin } = useSession()
   const { data: history } = useMyStats(player?.player_id)
   const { data: leaderboard } = useLeaderboard()
@@ -75,12 +77,30 @@ export function ProfilePage() {
         </div>
       )}
 
+      {/* Language toggle */}
+      <div className="mx-4 mt-5">
+        <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mb-2">{t('language')}</p>
+        <div className="flex bg-card rounded-2xl p-1 gap-1">
+          {(['en', 'he'] as const).map((l) => (
+            <button
+              key={l}
+              onClick={() => setLocale(l)}
+              className={`flex-1 py-2 rounded-xl text-sm font-medium transition-all ${
+                locale === l ? 'bg-accent text-bg' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              {l === 'en' ? t('english') : t('hebrew')}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div className="px-4 mt-5 mb-2">
         <button
           onClick={signOut}
           className="w-full bg-card border border-slate-700 text-slate-400 font-semibold py-3 rounded-2xl active:scale-95 transition-all"
         >
-          Sign out
+          {t('signOut')}
         </button>
       </div>
     </div>

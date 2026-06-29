@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { useLocale } from '../contexts/LocaleContext'
 
 type Method = 'google' | 'email' | 'phone'
 type Step = 'input' | 'otp' | 'sent'
 
 export function LoginPage() {
+  const { t } = useLocale()
   const navigate = useNavigate()
   const [method, setMethod] = useState<Method>('google')
   const [step, setStep] = useState<Step>('input')
@@ -89,7 +91,7 @@ export function LoginPage() {
       <div className="flex flex-col items-center gap-3">
         <div className="w-20 h-20 rounded-2xl bg-card flex items-center justify-center text-4xl">⚽</div>
         <h1 className="text-3xl font-bold text-white">TeamStep</h1>
-        <p className="text-slate-400 text-sm text-center">Track your weekly training performance</p>
+        <p className="text-slate-400 text-sm text-center">{t('tagline')}</p>
       </div>
 
       <div className="w-full max-w-sm flex flex-col gap-4">

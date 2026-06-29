@@ -1,13 +1,14 @@
 import { NavLink } from 'react-router-dom'
-
-const tabs = [
-  { to: '/dashboard', icon: '◎', label: 'Dashboard' },
-  { to: '/leaderboard', icon: '🏆', label: 'Board' },
-  { to: '/report', icon: '+', label: 'Report' },
-  { to: '/profile', icon: '👤', label: 'Profile' },
-]
+import { useLocale } from '../contexts/LocaleContext'
 
 export function BottomNav() {
+  const { t } = useLocale()
+  const tabs = [
+    { to: '/dashboard',   icon: '◎',  label: t('navDashboard') },
+    { to: '/leaderboard', icon: '🏆', label: t('navBoard') },
+    { to: '/report',      icon: '+',  label: t('navReport') },
+    { to: '/profile',     icon: '👤', label: t('navProfile') },
+  ]
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-slate-700/50 flex z-50"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
@@ -22,11 +23,11 @@ export function BottomNav() {
           }
         >
           {t.to === '/report' ? (
-            <span className="w-10 h-10 rounded-full bg-accent flex items-center justify-center text-bg text-2xl font-bold -mt-5 shadow-lg">
+            <span className="w-7 h-7 rounded-full bg-green-500 flex items-center justify-center text-white text-sm font-bold shadow-md">
               {t.icon}
             </span>
           ) : (
-            <span className="text-xl leading-none">{t.icon}</span>
+            <span className="h-7 flex items-center justify-center text-xl leading-none">{t.icon}</span>
           )}
           <span>{t.label}</span>
         </NavLink>
