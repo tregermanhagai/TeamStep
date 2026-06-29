@@ -41,6 +41,8 @@ export const translations = {
     english:              'English',
     hebrew:               'Hebrew',
     continuousTraining:   'Continuous Training',
+    leaderboardTitle:     'Leaderboard',
+    leaderboardSubtitle:  'All-time rankings',
   },
   he: {
     tagline:              'עקוב אחרי הביצועים שלך במגרש',
@@ -82,6 +84,8 @@ export const translations = {
     english:              'English',
     hebrew:               'עברית',
     continuousTraining:   'אימונים רצופים',
+    leaderboardTitle:     'טבלת מובילים',
+    leaderboardSubtitle:  'דירוג כל האימונים',
   },
 } as const
 

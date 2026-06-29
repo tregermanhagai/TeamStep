@@ -1,15 +1,18 @@
 import { useSession } from '../hooks/useSession'
 import { useLeaderboard } from '../hooks/useLeaderboard'
 import { LeaderboardRow } from '../components/LeaderboardRow'
+import { useLocale } from '../contexts/LocaleContext'
+
 export function LeaderboardPage() {
+  const { t } = useLocale()
   const { player } = useSession()
   const { data, loading } = useLeaderboard()
 
   return (
     <div className="min-h-screen bg-bg pb-nav">
       <div className="px-4 pt-12 pb-4">
-        <h1 className="text-xl font-bold text-white">Leaderboard</h1>
-        <p className="text-slate-400 text-sm mt-0.5">All-time rankings</p>
+        <h1 className="text-xl font-bold text-white">{t('leaderboardTitle')}</h1>
+        <p className="text-slate-400 text-sm mt-0.5">{t('leaderboardSubtitle')}</p>
       </div>
 
       <div className="px-4 flex flex-col gap-2">
