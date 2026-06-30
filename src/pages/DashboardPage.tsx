@@ -97,7 +97,7 @@ export function DashboardPage() {
             <p className="text-xs text-accent font-medium">
               {selectedSession
                 ? (selectedSession.data.label === 'Training Session' ? t('trainingSession') : (selectedSession.data.label ?? selectedSession.data.match_date))
-                : filter === 'last' ? t('lastPractice') : t('overall')}
+                : filter === 'last' ? t('trainingSession') : t('overall')}
             </p>
             <div className="flex flex-wrap gap-3 px-4 pb-1 justify-center">
               <StatPill label={t('goals')}       value={isSession ? src.goals       : me.total_goals}  color="#22C55E" />
