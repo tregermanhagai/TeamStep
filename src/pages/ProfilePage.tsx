@@ -9,7 +9,7 @@ import { supabase } from '../lib/supabase'
 
 export function ProfilePage() {
   const { t, locale, setLocale } = useLocale()
-  const { player, session, isAdmin } = useSession()
+  const { player, session, isAdmin, loading } = useSession()
   const { data: history } = useMyStats(player?.player_id)
   const { data: leaderboard } = useLeaderboard()
 
@@ -20,7 +20,24 @@ export function ProfilePage() {
     await supabase.auth.signOut()
   }
 
-  if (!player) return null
+  if (loading) return (
+    <div className="min-h-screen bg-bg flex items-center justify-center">
+      <div className="w-10 h-10 rounded-full bg-card animate-pulse" />
+    </div>
+  )
+
+  if (!player) return (
+    <div className="min-h-screen bg-bg flex flex-col items-center justify-center gap-3 px-8 text-center pb-nav">
+      <p className="text-white font-semibold">Could not load profile</p>
+      <p className="text-slate-400 text-sm">Try signing out and back in</p>
+      <button
+        onClick={signOut}
+        className="mt-2 bg-card border border-slate-700 text-slate-400 font-semibold px-6 py-3 rounded-2xl"
+      >
+        {t('signOut')}
+      </button>
+    </div>
+  )
 
   return (
     <div className="min-h-screen bg-bg pb-nav">

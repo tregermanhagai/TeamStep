@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase'
 import { Player } from '../types'
 
 const ADMIN_EMAILS = ['hagai1973@gmail.com', 'hagaitregerman@gmail.com']
-const DEFAULT_TEAM_ID = 'aaaaaaaa-0000-0000-0000-000000000001'
+
 
 export interface SessionState {
   session: Session | null
@@ -54,7 +54,7 @@ export function useSession(): SessionState {
       .eq('player_id', uid)
       .single()
 
-    // Fallback: trigger may have failed — create the row here
+    // Fallback: trigger may have failed — create the row via SECURITY DEFINER RPC
     if (!data) {
       const u = s.user
       const fullName =
@@ -64,17 +64,11 @@ export function useSession(): SessionState {
         u.phone ??
         'New Player'
 
-      await supabase.from('players').upsert(
-        {
-          player_id: uid,
-          team_id: DEFAULT_TEAM_ID,
-          full_name: fullName,
-          email: u.email ?? null,
-          phone: u.phone ?? null,
-          role: ADMIN_EMAILS.includes(u.email ?? '') ? 'admin' : 'player',
-        },
-        { onConflict: 'player_id' },
-      )
+      await supabase.rpc('ensure_player_exists', {
+        p_full_name: fullName,
+        p_email:     u.email  ?? null,
+        p_phone:     u.phone  ?? null,
+      })
 
       const { data: created } = await supabase
         .from('players')
