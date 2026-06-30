@@ -6,11 +6,13 @@ interface Props {
   rank: number
   player: PlayerScore
   isMe: boolean
+  isSelected?: boolean
+  onClick?: () => void
 }
 
 const RANK_COLORS: Record<number, string> = { 1: '#FFD700', 2: '#C0C0C0', 3: '#CD7F32' }
 
-export function LeaderboardRow({ rank, player, isMe }: Props) {
+export function LeaderboardRow({ rank, player, isMe, isSelected, onClick }: Props) {
   const rankColor = RANK_COLORS[rank] ?? '#64748B'
 
   return (
@@ -19,8 +21,12 @@ export function LeaderboardRow({ rank, player, isMe }: Props) {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className={`flex items-center gap-3 rounded-2xl px-4 py-3 ${
-        isMe ? 'ring-2 ring-accent bg-card' : 'bg-card'
+      onClick={onClick}
+      className={`flex items-center gap-3 rounded-2xl px-4 py-3 transition-colors ${
+        onClick ? 'cursor-pointer' : ''
+      } ${
+        isSelected ? 'ring-2 ring-yellow-400 bg-card' :
+        isMe ? 'ring-2 ring-accent bg-card' : 'bg-card hover:bg-slate-700/20'
       }`}
     >
       <span className="w-6 text-center text-sm font-bold" style={{ color: rankColor }}>

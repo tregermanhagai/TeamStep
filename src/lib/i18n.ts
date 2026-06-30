@@ -45,6 +45,7 @@ export const translations = {
     leaderboardSubtitle:  'All-time rankings',
     trainingSession:      'Training Session',
     overall:              'Overall',
+    alreadyReported:      'You already submitted stats for this date',
   },
   he: {
     tagline:              'עקוב אחרי הביצועים שלך במגרש',
@@ -90,6 +91,7 @@ export const translations = {
     leaderboardSubtitle:  'דירוג כל האימונים',
     trainingSession:      'אימון',
     overall:              'כללי',
+    alreadyReported:      'כבר הגשת נתונים לאימון זה',
   },
 } as const
 

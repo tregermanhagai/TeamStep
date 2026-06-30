@@ -53,6 +53,7 @@ export function ReportPage() {
   const [matchId, setMatchId] = useState('')
   const [loadingMatch, setLoadingMatch] = useState(true)
   const [matchLocked, setMatchLocked] = useState(false)
+  const [alreadyReported, setAlreadyReported] = useState(false)
 
   const [teamWon, setTeamWon] = useState(0)
   const [goals, setGoals] = useState(0)
@@ -71,6 +72,7 @@ export function ReportPage() {
     setLoadingMatch(true)
     setMatchId('')
     setMatchLocked(false)
+    setAlreadyReported(false)
     setError(null)
 
     const { data: matchUuid, error: rpcErr } = await supabase
@@ -78,8 +80,24 @@ export function ReportPage() {
 
     if (rpcErr) {
       setError('Could not load session for this date.')
-    } else if (matchUuid) {
-      setMatchId(matchUuid as string)
+      setLoadingMatch(false)
+      return
+    }
+
+    if (matchUuid) {
+      const uuid = matchUuid as string
+      const { data: existing } = await supabase
+        .from('reports')
+        .select('report_id')
+        .eq('player_id', player?.player_id ?? '')
+        .eq('match_id', uuid)
+        .maybeSingle()
+
+      if (existing) {
+        setAlreadyReported(true)
+      } else {
+        setMatchId(uuid)
+      }
     }
 
     setLoadingMatch(false)
@@ -171,6 +189,11 @@ export function ReportPage() {
           )}
           {matchLocked && (
             <p className="text-xs text-red-400 mt-1.5">{t('sessionLocked')}</p>
+          )}
+          {alreadyReported && (
+            <div className="mt-2 bg-amber-900/30 border border-amber-700 rounded-xl px-4 py-3 text-amber-300 text-sm">
+              {t('alreadyReported')}
+            </div>
           )}
         </div>
 
