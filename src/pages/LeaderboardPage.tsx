@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useLocation } from 'react-router-dom'
 import { useSession } from '../hooks/useSession'
 import { useLeaderboard } from '../hooks/useLeaderboard'
 import { useMyStats } from '../hooks/useMyStats'
@@ -13,8 +14,17 @@ export function LeaderboardPage() {
   const { t } = useLocale()
   const { player } = useSession()
   const { data, loading } = useLeaderboard()
+  const location = useLocation()
   const [selectedPlayer, setSelectedPlayer] = useState<PlayerScore | null>(null)
   const { data: selectedHistory, loading: histLoading } = useMyStats(selectedPlayer?.player_id)
+
+  useEffect(() => {
+    const preselectedId = (location.state as { selectedPlayerId?: string } | null)?.selectedPlayerId
+    if (preselectedId && data.length > 0) {
+      const found = data.find((p) => p.player_id === preselectedId)
+      if (found) setSelectedPlayer(found)
+    }
+  }, [data, location.state])
 
   const selectedRank = selectedPlayer
     ? data.findIndex((p) => p.player_id === selectedPlayer.player_id) + 1

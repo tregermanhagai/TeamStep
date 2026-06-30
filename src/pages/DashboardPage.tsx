@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useLocale } from '../contexts/LocaleContext'
 import { useSession } from '../hooks/useSession'
 import { useLeaderboard } from '../hooks/useLeaderboard'
@@ -13,6 +14,7 @@ type Filter = 'all' | 'last'
 
 export function DashboardPage() {
   const { t } = useLocale()
+  const navigate = useNavigate()
   const [filter, setFilter] = useState<Filter>('all')
   const [selectedSession, setSelectedSession] = useState<{ data: typeof history[0]; index: number } | null>(null)
   const { player } = useSession()
@@ -145,6 +147,7 @@ export function DashboardPage() {
                 rank={i + 1}
                 player={p}
                 isMe={p.player_id === player?.player_id}
+                onClick={() => navigate('/leaderboard', { state: { selectedPlayerId: p.player_id } })}
               />
             ))}
           </div>
