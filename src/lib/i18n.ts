@@ -46,6 +46,7 @@ export const translations = {
     trainingSession:      'Training Session',
     overall:              'Overall',
     alreadyReported:      'You already submitted stats for this date',
+    points:               'Points',
   },
   he: {
     tagline:              'עקוב אחרי הביצועים שלך במגרש',
@@ -92,6 +93,7 @@ export const translations = {
     trainingSession:      'אימון',
     overall:              'כללי',
     alreadyReported:      'כבר הגשת נתונים לאימון זה',
+    points:               'נקודות',
   },
 } as const
 

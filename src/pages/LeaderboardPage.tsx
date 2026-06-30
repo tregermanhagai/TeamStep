@@ -11,6 +11,7 @@ import { useLocale } from '../contexts/LocaleContext'
 import { PlayerScore, SessionMatchStat } from '../types'
 
 type PanelFilter = 'all' | 'last'
+type SortBy = 'points' | 'goals' | 'assists' | 'wins'
 
 export function LeaderboardPage() {
   const { t } = useLocale()
@@ -18,9 +19,19 @@ export function LeaderboardPage() {
   const { data, loading } = useLeaderboard()
   const location = useLocation()
 
+  const [sortBy, setSortBy] = useState<SortBy>('points')
   const [selectedPlayer, setSelectedPlayer] = useState<PlayerScore | null>(null)
   const [panelFilter, setPanelFilter] = useState<PanelFilter>('all')
   const [panelSession, setPanelSession] = useState<{ data: SessionMatchStat; index: number } | null>(null)
+
+  const sortedData = [...data].sort((a, b) => {
+    switch (sortBy) {
+      case 'goals':   return b.total_goals   - a.total_goals   || b.total_points - a.total_points
+      case 'assists': return b.total_assists - a.total_assists || b.total_points - a.total_points
+      case 'wins':    return b.total_wins    - a.total_wins    || b.total_points - a.total_points
+      default:        return b.total_points  - a.total_points
+    }
+  })
 
   const { data: selectedHistory, loading: histLoading } = useMyStats(selectedPlayer?.player_id)
 
@@ -44,7 +55,7 @@ export function LeaderboardPage() {
   }
 
   const selectedRank = selectedPlayer
-    ? data.findIndex((p) => p.player_id === selectedPlayer.player_id) + 1
+    ? sortedData.findIndex((p) => p.player_id === selectedPlayer.player_id) + 1
     : null
 
   const filteredHistory = panelFilter === 'last' ? selectedHistory.slice(-1) : selectedHistory
@@ -60,6 +71,26 @@ export function LeaderboardPage() {
       <div className="px-4 pt-12 pb-4">
         <h1 className="text-xl font-bold text-white">{t('leaderboardTitle')}</h1>
         <p className="text-slate-400 text-sm mt-0.5">{t('leaderboardSubtitle')}</p>
+      </div>
+
+      {/* Sort tabs */}
+      <div className="flex bg-card rounded-2xl p-1 mx-4 mb-4 gap-1">
+        {([
+          { key: 'points',  label: t('points')  },
+          { key: 'goals',   label: t('goals')   },
+          { key: 'assists', label: t('assists') },
+          { key: 'wins',    label: t('wins')    },
+        ] as { key: SortBy; label: string }[]).map(({ key, label }) => (
+          <button
+            key={key}
+            onClick={() => setSortBy(key)}
+            className={`flex-1 py-1.5 rounded-xl text-xs font-medium transition-all ${
+              sortBy === key ? 'bg-accent text-bg' : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            {label}
+          </button>
+        ))}
       </div>
 
       {/* Selected player stats panel */}
@@ -131,13 +162,14 @@ export function LeaderboardPage() {
           ? [1, 2, 3, 4, 5].map((i) => (
               <div key={i} className="h-14 bg-card rounded-2xl animate-pulse" />
             ))
-          : data.map((p, i) => (
+          : sortedData.map((p, i) => (
               <LeaderboardRow
                 key={p.player_id}
                 rank={i + 1}
                 player={p}
                 isMe={p.player_id === player?.player_id}
                 isSelected={selectedPlayer?.player_id === p.player_id}
+                sortBy={sortBy}
                 onClick={() => togglePlayer(p)}
               />
             ))}
