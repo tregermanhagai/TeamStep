@@ -129,7 +129,7 @@ BEGIN
     'aaaaaaaa-0000-0000-0000-000000000001',
     COALESCE(NEW.raw_user_meta_data->>'full_name', split_part(NEW.email, '@', 1)),
     NEW.email,
-    CASE WHEN NEW.email = 'hagai1973@gmail.com' THEN 'admin' ELSE 'player' END
+    CASE WHEN NEW.email = 'hagai1973@gmail.com' THEN 'admin' ELSE 'player' END  -- update to your email
   )
   ON CONFLICT (player_id) DO NOTHING;
   RETURN NEW;

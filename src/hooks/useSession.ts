@@ -3,7 +3,7 @@ import { Session } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
 import { Player } from '../types'
 
-const ADMIN_EMAIL = 'hagaitregerman@gmail.com'
+const ADMIN_EMAIL = 'hagai1973@gmail.com'
 const DEFAULT_TEAM_ID = 'aaaaaaaa-0000-0000-0000-000000000001'
 
 export interface SessionState {
