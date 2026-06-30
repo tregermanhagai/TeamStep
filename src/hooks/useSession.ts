@@ -3,7 +3,7 @@ import { Session } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
 import { Player } from '../types'
 
-const ADMIN_EMAIL = 'hagai1973@gmail.com'
+const ADMIN_EMAILS = ['hagai1973@gmail.com', 'hagaitregerman@gmail.com']
 const DEFAULT_TEAM_ID = 'aaaaaaaa-0000-0000-0000-000000000001'
 
 export interface SessionState {
@@ -71,7 +71,7 @@ export function useSession(): SessionState {
           full_name: fullName,
           email: u.email ?? null,
           phone: u.phone ?? null,
-          role: u.email === ADMIN_EMAIL ? 'admin' : 'player',
+          role: ADMIN_EMAILS.includes(u.email ?? '') ? 'admin' : 'player',
         },
         { onConflict: 'player_id' },
       )
@@ -94,7 +94,7 @@ export function useSession(): SessionState {
   return {
     session,
     player,
-    isAdmin: session?.user?.email === ADMIN_EMAIL,
+    isAdmin: ADMIN_EMAILS.includes(session?.user?.email ?? ''),
     needsOnboarding,
     loading,
     refetchPlayer: () => { if (session) fetchPlayer(session) },
