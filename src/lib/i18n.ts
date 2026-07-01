@@ -48,6 +48,13 @@ export const translations = {
     overall:              'Overall',
     alreadyReported:      'You already submitted stats for this date',
     points:               'Points',
+    played:               'Played',
+    sessionsPlayed:       'Sessions played',
+    bestSession:          'Best session',
+    role:                 'Role',
+    adminSection:         'Admin',
+    scoringRules:         'Scoring Rules',
+    scoringRulesDesc:     'Edit multipliers & custom categories',
   },
   he: {
     tagline:              'עקוב אחרי הביצועים שלך במגרש',
@@ -96,6 +103,13 @@ export const translations = {
     overall:              'כללי',
     alreadyReported:      'כבר הגשת נתונים לאימון זה',
     points:               'נקודות',
+    played:               'שוחק',
+    sessionsPlayed:       'אימונים ששוחקו',
+    bestSession:          'אימון הכי טוב',
+    role:                 'תפקיד',
+    adminSection:         'מנהל',
+    scoringRules:         'חוקי ניקוד',
+    scoringRulesDesc:     'ערוך מקדמים וקטגוריות',
   },
 } as const
 
