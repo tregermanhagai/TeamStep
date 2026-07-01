@@ -103,7 +103,7 @@ export const translations = {
     overall:              'כללי',
     alreadyReported:      'כבר הגשת נתונים לאימון זה',
     points:               'נקודות',
-    played:               'שוחק',
+    played:               'אימונים',
     sessionsPlayed:       'אימונים ששוחקו',
     bestSession:          'אימון הכי טוב',
     role:                 'תפקיד',
