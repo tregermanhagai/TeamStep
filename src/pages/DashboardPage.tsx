@@ -97,13 +97,18 @@ export function DashboardPage() {
       {me && (() => {
         const src = selectedSession?.data ?? (filter === 'last' ? filteredHistory[0] : null)
         const isSession = !!src
+        function fmtDate(dateStr: string) {
+          const d = new Date(dateStr + 'T12:00:00')
+          return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`
+        }
+        const pillLabel = selectedSession
+          ? fmtDate(selectedSession.data.match_date)
+          : filter === 'last' && filteredHistory[0]
+            ? fmtDate(filteredHistory[0].match_date)
+            : t('overall')
         return (
           <div className="flex flex-col items-center gap-2 mt-5">
-            <p className="text-xs text-accent font-medium">
-              {selectedSession
-                ? (selectedSession.data.label === 'Training Session' ? t('trainingSession') : (selectedSession.data.label ?? selectedSession.data.match_date))
-                : filter === 'last' ? t('trainingSession') : t('overall')}
-            </p>
+            <p className="text-xs text-accent font-medium">{pillLabel}</p>
             <div className="flex flex-wrap gap-3 px-4 pb-1 justify-center">
               <StatPill label={t('goals')}        value={isSession ? src.goals       : me.total_goals}  color="#22C55E" />
               <StatPill label={t('assists')}      value={isSession ? src.assists      : me.total_assists} color="#06C8E0" />

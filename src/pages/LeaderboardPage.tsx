@@ -65,9 +65,16 @@ export function LeaderboardPage() {
   const src = panelSession?.data ?? (panelFilter === 'last' ? filteredHistory[0] : null)
   const isSession = !!src
 
+  function fmtDate(dateStr: string) {
+    const d = new Date(dateStr + 'T12:00:00')
+    return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`
+  }
+
   const pillLabel = panelSession
-    ? (panelSession.data.label === 'Training Session' ? t('trainingSession') : (panelSession.data.label ?? panelSession.data.match_date))
-    : panelFilter === 'last' ? t('trainingSession') : t('overall')
+    ? fmtDate(panelSession.data.match_date)
+    : panelFilter === 'last' && filteredHistory[0]
+      ? fmtDate(filteredHistory[0].match_date)
+      : t('overall')
 
   return (
     <div className="min-h-screen bg-bg pb-nav">
