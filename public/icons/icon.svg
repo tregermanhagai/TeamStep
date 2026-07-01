@@ -1,4 +1,18 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="100" fill="#0B1627"/>
-  <text x="256" y="390" font-size="380" text-anchor="middle">⚽</text>
+  <!-- Background -->
+  <rect width="512" height="512" rx="80" fill="#0B1627"/>
+  <!-- White ball -->
+  <circle cx="256" cy="256" r="175" fill="white"/>
+  <!-- Center pentagon -->
+  <polygon fill="#111" points="256,167 303,201 285,255 227,255 209,201"/>
+  <!-- Top pentagon -->
+  <polygon fill="#111" points="256,72 294,99 281,145 231,145 218,99"/>
+  <!-- Top-right pentagon -->
+  <polygon fill="#111" points="347,138 384,166 372,212 325,214 313,168"/>
+  <!-- Bottom-right pentagon -->
+  <polygon fill="#111" points="374,274 388,322 349,350 312,328 318,280"/>
+  <!-- Bottom-left pentagon -->
+  <polygon fill="#111" points="194,328 157,350 118,322 132,274 180,280"/>
+  <!-- Top-left pentagon -->
+  <polygon fill="#111" points="165,168 153,214 106,212 94,166 131,138"/>
 </svg>
