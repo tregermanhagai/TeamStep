@@ -59,7 +59,7 @@ export function ReportPage() {
   const [goals, setGoals] = useState(0)
   const [assists, setAssists] = useState(0)
   const [cleanSheet, setCleanSheet] = useState(0)
-  const [teamColor, setTeamColor] = useState<TeamColor>('Blue')
+  const [teamColor, setTeamColor] = useState<TeamColor>('Other')
   const [customValues, setCustomValues] = useState<Record<string, number>>({})
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
