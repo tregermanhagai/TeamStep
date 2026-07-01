@@ -6,9 +6,9 @@ export function useMyStats(playerId: string | undefined) {
   const [data, setData] = useState<SessionMatchStat[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
+  function fetchStats() {
     if (!playerId) { setLoading(false); return }
-
+    setLoading(true)
     supabase
       .from('player_match_scores')
       .select('match_date, label, goals, assists, team_won, clean_sheet, team_color, match_pts')
@@ -18,7 +18,9 @@ export function useMyStats(playerId: string | undefined) {
         setData((rows ?? []) as SessionMatchStat[])
         setLoading(false)
       })
-  }, [playerId])
+  }
 
-  return { data, loading }
+  useEffect(() => { fetchStats() }, [playerId])
+
+  return { data, loading, refetch: fetchStats }
 }

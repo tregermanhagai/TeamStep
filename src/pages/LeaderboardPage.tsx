@@ -11,13 +11,14 @@ import { Avatar } from '../components/Avatar'
 import { useLocale } from '../contexts/LocaleContext'
 import { PlayerScore, SessionMatchStat } from '../types'
 import { AppFooter } from '../components/AppFooter'
+import { AdminStatUpdater } from '../components/AdminStatUpdater'
 
 type PanelFilter = 'all' | 'last'
 type SortBy = 'points' | 'goals' | 'assists' | 'wins'
 
 export function LeaderboardPage() {
   const { t } = useLocale()
-  const { player } = useSession()
+  const { player, isAdmin } = useSession()
   const { data, loading } = useLeaderboard()
   const location = useLocation()
 
@@ -35,7 +36,7 @@ export function LeaderboardPage() {
     }
   })
 
-  const { data: selectedHistory, loading: histLoading } = useMyStats(selectedPlayer?.player_id)
+  const { data: selectedHistory, loading: histLoading, refetch: refetchStats } = useMyStats(selectedPlayer?.player_id)
   const { data: customTotals } = usePlayerCustomTotals(selectedPlayer?.player_id)
   const ctTotal = customTotals.find((c) => c.label === 'Continuous Training')?.total ?? 0
 
@@ -165,6 +166,15 @@ export function LeaderboardPage() {
               onSessionClick={(session, index) =>
                 setPanelSession((prev) => prev?.index === index ? null : { data: session, index })
               }
+            />
+          )}
+
+          {/* Admin stat updater — only when last session selected and session exists */}
+          {isAdmin && panelFilter === 'last' && filteredHistory[0] && (
+            <AdminStatUpdater
+              playerId={selectedPlayer.player_id}
+              matchDate={filteredHistory[0].match_date}
+              onSuccess={refetchStats}
             />
           )}
         </div>
