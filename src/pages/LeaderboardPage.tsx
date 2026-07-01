@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom'
 import { useSession } from '../hooks/useSession'
 import { useLeaderboard } from '../hooks/useLeaderboard'
 import { useMyStats } from '../hooks/useMyStats'
+import { usePlayerCustomTotals } from '../hooks/usePlayerCustomTotals'
 import { LeaderboardRow } from '../components/LeaderboardRow'
 import { StatPill } from '../components/StatPill'
 import { StatsChart } from '../components/StatsChart'
@@ -34,6 +35,8 @@ export function LeaderboardPage() {
   })
 
   const { data: selectedHistory, loading: histLoading } = useMyStats(selectedPlayer?.player_id)
+  const { data: customTotals } = usePlayerCustomTotals(selectedPlayer?.player_id)
+  const ctTotal = customTotals.find((c) => c.label === 'Continuous Training')?.total ?? 0
 
   // Pre-select player when navigated from dashboard
   useEffect(() => {
@@ -134,10 +137,13 @@ export function LeaderboardPage() {
           <div className="flex flex-col items-center gap-2 mb-3">
             <p className="text-xs text-accent font-medium">{pillLabel}</p>
             <div className="flex flex-wrap gap-2 justify-center">
-              <StatPill label={t('goals')}       value={isSession ? src.goals       : selectedPlayer.total_goals}   color="#22C55E" />
-              <StatPill label={t('assists')}     value={isSession ? src.assists      : selectedPlayer.total_assists} color="#06C8E0" />
-              <StatPill label={t('wins')}        value={isSession ? src.team_won    : selectedPlayer.total_wins}    color="#F59E0B" />
-              <StatPill label={t('cleanSheets')} value={isSession ? src.clean_sheet : selectedPlayer.total_cs}      color="#8B5CF6" />
+              <StatPill label={t('goals')}        value={isSession ? src.goals       : selectedPlayer.total_goals}   color="#22C55E" />
+              <StatPill label={t('assists')}      value={isSession ? src.assists      : selectedPlayer.total_assists} color="#06C8E0" />
+              <StatPill label={t('wins')}         value={isSession ? src.team_won    : selectedPlayer.total_wins}    color="#F59E0B" />
+              <StatPill label={t('cleanSheets')}  value={isSession ? src.clean_sheet : selectedPlayer.total_cs}      color="#8B5CF6" />
+              {!isSession && ctTotal > 0 && (
+                <StatPill label={t('contTraining')} value={ctTotal} color="#EC4899" />
+              )}
             </div>
           </div>
 

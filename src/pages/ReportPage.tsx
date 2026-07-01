@@ -205,15 +205,18 @@ export function ReportPage() {
             <ChipSelector label={t('assists')}      value={assists}     onChange={setAssists} />
             <ChipSelector label={t('cleanSheets')}  value={cleanSheet}  onChange={setCleanSheet} />
 
-            {customCategories.map((cat) => (
-              <ChipSelector
-                key={cat.category_id}
-                label={`${cat.label} (+${cat.pts_per_unit} pt${cat.pts_per_unit !== 1 ? 's' : ''})`}
-                value={customValues[cat.category_id] ?? 0}
-                onChange={(v) => setCustomValue(cat.category_id, v)}
-                max={cat.max_per_match}
-              />
-            ))}
+            {customCategories.map((cat) => {
+              const catLabel = cat.label === 'Continuous Training' ? t('continuousTraining') : cat.label
+              return (
+                <ChipSelector
+                  key={cat.category_id}
+                  label={`${catLabel} (+${cat.pts_per_unit} ${t('pts')})`}
+                  value={customValues[cat.category_id] ?? 0}
+                  onChange={(v) => setCustomValue(cat.category_id, v)}
+                  max={cat.max_per_match}
+                />
+              )
+            })}
 
             <div className="mb-6">
               <p className="text-sm text-slate-400 mb-2">{t('teamColor')}</p>

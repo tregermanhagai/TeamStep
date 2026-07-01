@@ -4,6 +4,7 @@ import { useLocale } from '../contexts/LocaleContext'
 import { useSession } from '../hooks/useSession'
 import { useLeaderboard } from '../hooks/useLeaderboard'
 import { useMyStats } from '../hooks/useMyStats'
+import { usePlayerCustomTotals } from '../hooks/usePlayerCustomTotals'
 import { ScoreRing } from '../components/ScoreRing'
 import { StatsChart } from '../components/StatsChart'
 import { StatPill } from '../components/StatPill'
@@ -20,6 +21,8 @@ export function DashboardPage() {
   const { player } = useSession()
   const { data: leaderboard, loading: lbLoading } = useLeaderboard()
   const { data: history, loading: histLoading } = useMyStats(player?.player_id)
+  const { data: customTotals } = usePlayerCustomTotals(player?.player_id)
+  const ctTotal = customTotals.find((c) => c.label === 'Continuous Training')?.total ?? 0
 
   const me = leaderboard.find((p) => p.player_id === player?.player_id)
   const myRank = me ? leaderboard.indexOf(me) + 1 : null
@@ -102,10 +105,13 @@ export function DashboardPage() {
                 : filter === 'last' ? t('trainingSession') : t('overall')}
             </p>
             <div className="flex flex-wrap gap-3 px-4 pb-1 justify-center">
-              <StatPill label={t('goals')}       value={isSession ? src.goals       : me.total_goals}  color="#22C55E" />
-              <StatPill label={t('assists')}     value={isSession ? src.assists      : me.total_assists} color="#06C8E0" />
-              <StatPill label={t('wins')}        value={isSession ? src.team_won    : me.total_wins}    color="#F59E0B" />
-              <StatPill label={t('cleanSheets')} value={isSession ? src.clean_sheet : me.total_cs}      color="#8B5CF6" />
+              <StatPill label={t('goals')}        value={isSession ? src.goals       : me.total_goals}  color="#22C55E" />
+              <StatPill label={t('assists')}      value={isSession ? src.assists      : me.total_assists} color="#06C8E0" />
+              <StatPill label={t('wins')}         value={isSession ? src.team_won    : me.total_wins}    color="#F59E0B" />
+              <StatPill label={t('cleanSheets')}  value={isSession ? src.clean_sheet : me.total_cs}      color="#8B5CF6" />
+              {!isSession && ctTotal > 0 && (
+                <StatPill label={t('contTraining')} value={ctTotal} color="#EC4899" />
+              )}
             </div>
           </div>
         )
