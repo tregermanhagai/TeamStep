@@ -8,7 +8,7 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: 'auto',
-      includeAssets: ['favicon.svg', 'icons/icon.png'],
+      includeAssets: ['favicon.svg', 'icons/icon-192.png'],
       manifest: {
         name: 'TeamStep',
         short_name: 'TeamStep',
@@ -20,8 +20,8 @@ export default defineConfig({
         scope: '/',
         icons: [
           {
-            src: '/icons/icon.png',
-            sizes: '512x512',
+            src: '/icons/icon-192.png',
+            sizes: '192x192',
             type: 'image/png',
             purpose: 'any maskable',
           },
