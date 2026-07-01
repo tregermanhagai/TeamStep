@@ -7,10 +7,12 @@ import { Avatar } from '../components/Avatar'
 import { StatPill } from '../components/StatPill'
 import { supabase } from '../lib/supabase'
 import { AppFooter } from '../components/AppFooter'
+import { AdminRoleManager } from '../components/AdminRoleManager'
 
 export function ProfilePage() {
   const { t, locale, setLocale } = useLocale()
   const { player, session, isAdmin, loading } = useSession()
+  const isSuperAdmin = session?.user?.email === 'hagai1973@gmail.com'
   const { data: history } = useMyStats(player?.player_id)
   const { data: leaderboard } = useLeaderboard()
 
@@ -91,6 +93,14 @@ export function ProfilePage() {
               </div>
               <span className="text-slate-500 text-lg">›</span>
             </Link>
+            {isSuperAdmin && (
+              <div>
+                <div className="flex items-center justify-between px-4 pt-3 pb-1">
+                  <p className="text-sm text-white font-medium">{t('manageAdmins')}</p>
+                </div>
+                <AdminRoleManager />
+              </div>
+            )}
           </div>
         </div>
       )}
