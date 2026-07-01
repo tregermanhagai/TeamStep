@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useLocale } from '../contexts/LocaleContext'
+import { AppFooter } from '../components/AppFooter'
 
 type Method = 'google' | 'email' | 'phone'
 type Step = 'input' | 'otp' | 'sent'
@@ -225,6 +226,7 @@ export function LoginPage() {
           </div>
         )}
       </div>
+      <AppFooter />
     </div>
   )
 }
