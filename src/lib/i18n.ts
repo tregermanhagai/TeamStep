@@ -55,6 +55,10 @@ export const translations = {
     adminSection:         'Admin',
     scoringRules:         'Scoring Rules',
     scoringRulesDesc:     'Edit multipliers & custom categories',
+    colorPink:            'Pink',
+    colorBlue:            'Blue',
+    colorYellow:          'Yellow',
+    colorOther:           'Other',
   },
   he: {
     tagline:              'עקוב אחרי הביצועים שלך במגרש',
@@ -110,6 +114,10 @@ export const translations = {
     adminSection:         'מנהל',
     scoringRules:         'חוקי ניקוד',
     scoringRulesDesc:     'ערוך מקדמים וקטגוריות',
+    colorPink:            'ורוד',
+    colorBlue:            'כחול',
+    colorYellow:          'צהוב',
+    colorOther:           'אחר',
   },
 } as const
 

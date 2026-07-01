@@ -229,7 +229,7 @@ export function ReportPage() {
                       teamColor === c ? 'bg-accent text-bg' : 'bg-card text-slate-400'
                     }`}
                   >
-                    {c}
+                    {{ Pink: t('colorPink'), Blue: t('colorBlue'), Yellow: t('colorYellow'), Other: t('colorOther') }[c]}
                   </button>
                 ))}
               </div>
