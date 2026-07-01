@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { useSession } from '../hooks/useSession'
 import { useCustomCategories } from '../hooks/useCustomCategories'
 import { useLocale } from '../contexts/LocaleContext'
+import { AppFooter } from '../components/AppFooter'
 
 type TeamColor = 'Pink' | 'Blue' | 'Yellow' | 'Other'
 const COLORS: TeamColor[] = ['Pink', 'Blue', 'Yellow', 'Other']
@@ -257,6 +258,7 @@ export function ReportPage() {
           </div>
         )}
       </div>
+      <AppFooter />
     </div>
   )
 }

@@ -6,6 +6,7 @@ import { useLeaderboard } from '../hooks/useLeaderboard'
 import { Avatar } from '../components/Avatar'
 import { StatPill } from '../components/StatPill'
 import { supabase } from '../lib/supabase'
+import { AppFooter } from '../components/AppFooter'
 
 export function ProfilePage() {
   const { t, locale, setLocale } = useLocale()
@@ -120,6 +121,7 @@ export function ProfilePage() {
           {t('signOut')}
         </button>
       </div>
+      <AppFooter />
     </div>
   )
 }

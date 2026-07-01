@@ -10,6 +10,7 @@ import { StatsChart } from '../components/StatsChart'
 import { Avatar } from '../components/Avatar'
 import { useLocale } from '../contexts/LocaleContext'
 import { PlayerScore, SessionMatchStat } from '../types'
+import { AppFooter } from '../components/AppFooter'
 
 type PanelFilter = 'all' | 'last'
 type SortBy = 'points' | 'goals' | 'assists' | 'wins'
@@ -187,6 +188,7 @@ export function LeaderboardPage() {
               />
             ))}
       </div>
+      <AppFooter />
     </div>
   )
 }

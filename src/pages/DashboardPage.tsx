@@ -10,6 +10,7 @@ import { StatsChart } from '../components/StatsChart'
 import { StatPill } from '../components/StatPill'
 import { LeaderboardRow } from '../components/LeaderboardRow'
 import { supabase } from '../lib/supabase'
+import { AppFooter } from '../components/AppFooter'
 
 type Filter = 'all' | 'last'
 
@@ -164,6 +165,7 @@ export function DashboardPage() {
           </div>
         )}
       </div>
+      <AppFooter />
     </div>
   )
 }
