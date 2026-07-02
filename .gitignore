@@ -32,3 +32,5 @@ npm-debug.log*
 # Original source files moved to docs/ and public/avatars/
 cartoons/
 /TeamStep_SRS*
+
+.vercel
