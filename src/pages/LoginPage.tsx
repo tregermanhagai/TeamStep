@@ -40,6 +40,7 @@ export function LoginPage() {
 
   async function signInGoogle() {
     sessionStorage.setItem('ts_privacy_ts', new Date().toISOString())
+    sessionStorage.removeItem('ts_display_name')  // prevent stale phone name contaminating Google users
     setLoading(true)
     await supabase.auth.signInWithOAuth({
       provider: 'google',

@@ -64,7 +64,8 @@ export function useSession(): SessionState {
     // Fallback: trigger may have failed — create the row via SECURITY DEFINER RPC
     if (!data) {
       const u = s.user
-      const storedName = sessionStorage.getItem('ts_display_name')
+      const isGoogleUser = s.user.app_metadata?.provider === 'google'
+      const storedName = isGoogleUser ? null : sessionStorage.getItem('ts_display_name')
       const fullName =
         storedName ||
         (u.user_metadata?.full_name ??
