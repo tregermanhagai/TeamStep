@@ -4,17 +4,21 @@ import { supabase } from '../lib/supabase'
 import { useLocale } from '../contexts/LocaleContext'
 import { AppFooter } from '../components/AppFooter'
 
-type Method = 'google' | 'email' | 'phone'
-type Step = 'input' | 'otp' | 'sent'
+type Method = 'phone' | 'email' | 'google'
+type Step = 'input' | 'otp' | 'confirm'
+type AuthMode = 'signin' | 'register'
 
 export function LoginPage() {
   const { t } = useLocale()
   const navigate = useNavigate()
-  const [method, setMethod] = useState<Method>('google')
+  const [method, setMethod] = useState<Method>('phone')
   const [step, setStep] = useState<Step>('input')
+  const [authMode, setAuthMode] = useState<AuthMode>('signin')
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
   const [displayName, setDisplayName] = useState('')
+  const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [otp, setOtp] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -27,6 +31,13 @@ export function LoginPage() {
     return () => subscription.unsubscribe()
   }, [navigate])
 
+  function switchMethod(m: Method) {
+    setMethod(m)
+    setStep('input')
+    setError(null)
+    setAuthMode('signin')
+  }
+
   async function signInGoogle() {
     sessionStorage.setItem('ts_privacy_ts', new Date().toISOString())
     setLoading(true)
@@ -37,27 +48,13 @@ export function LoginPage() {
     setLoading(false)
   }
 
-  async function sendEmailLink() {
-    sessionStorage.setItem('ts_privacy_ts', new Date().toISOString())
-    setLoading(true)
-    setError(null)
-    const { error: err } = await supabase.auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo: `${window.location.origin}/dashboard` },
-    })
-    if (err) setError(err.message || 'Failed to send magic link. Please try again.')
-    else setStep('sent')
-    setLoading(false)
-  }
-
   function normalizePhone(raw: string): string {
-    // Strip spaces, dashes, parentheses
     let cleaned = raw.replace(/[\s\-().]/g, '')
-    // Israeli local format: 05x → +9725x
-    if (cleaned.startsWith('05')) cleaned = '+972' + cleaned.slice(1)
-    // Ensure + prefix
-    if (!cleaned.startsWith('+')) cleaned = '+' + cleaned
-    return cleaned
+    if (cleaned.startsWith('+')) return cleaned
+    if (cleaned.startsWith('05')) return '+972' + cleaned.slice(1)
+    if (/^5\d{8}$/.test(cleaned)) return '+972' + cleaned   // e.g. 541234567
+    if (cleaned.startsWith('972')) return '+' + cleaned      // e.g. 972541234567
+    return '+' + cleaned
   }
 
   async function sendPhoneOtp() {
@@ -67,7 +64,7 @@ export function LoginPage() {
     setError(null)
     const normalized = normalizePhone(phone)
     const { error: err } = await supabase.auth.signInWithOtp({ phone: normalized })
-    if (err) setError(err.message || err.code || 'Failed to send code. Please try again.')
+    if (err) setError(err.message || (err as any).code || 'Failed to send SMS code. Please try again.')
     else { setPhone(normalized); setStep('otp') }
     setLoading(false)
   }
@@ -80,7 +77,7 @@ export function LoginPage() {
       token: otp,
       type: 'sms',
     })
-    if (err) { setError(err.message || err.code || 'Verification failed. Please try again.'); setLoading(false); return }
+    if (err) { setError(err.message || (err as any).code || 'Verification failed. Please try again.'); setLoading(false); return }
     if (data.user) {
       await supabase
         .from('players')
@@ -97,9 +94,38 @@ export function LoginPage() {
     setLoading(false)
   }
 
+  async function signInWithPassword() {
+    setLoading(true)
+    setError(null)
+    const { error: err } = await supabase.auth.signInWithPassword({ email, password })
+    if (err) setError(err.message || 'Sign in failed. Please check your email and password.')
+    setLoading(false)
+  }
+
+  async function registerWithPassword() {
+    if (!displayName.trim()) { setError('Please enter your name.'); return }
+    if (password.length < 6) { setError('Password must be at least 6 characters.'); return }
+    if (password !== confirmPassword) { setError('Passwords do not match.'); return }
+    sessionStorage.setItem('ts_privacy_ts', new Date().toISOString())
+    sessionStorage.setItem('ts_display_name', displayName.trim())
+    setLoading(true)
+    setError(null)
+    const { data, error: err } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { full_name: displayName.trim() } },
+    })
+    if (err) { setError(err.message || 'Registration failed. Please try again.'); setLoading(false); return }
+    if (!data.session) {
+      // Email confirmation required
+      setStep('confirm')
+    }
+    // If data.session exists, onAuthStateChange navigates to /dashboard
+    setLoading(false)
+  }
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center gap-8 px-6 bg-bg">
-      {/* Logo */}
       <div className="flex flex-col items-center gap-3">
         <div className="w-20 h-20 rounded-2xl bg-card flex items-center justify-center text-4xl">⚽</div>
         <h1 className="text-3xl font-bold text-white">TeamStep</h1>
@@ -109,10 +135,10 @@ export function LoginPage() {
       <div className="w-full max-w-sm flex flex-col gap-4">
         {/* Method tabs */}
         <div className="flex bg-card rounded-2xl p-1 gap-1">
-          {(['google', 'email', 'phone'] as Method[]).map((m) => (
+          {(['phone', 'email', 'google'] as Method[]).map((m) => (
             <button
               key={m}
-              onClick={() => { setMethod(m); setStep('input'); setError(null) }}
+              onClick={() => switchMethod(m)}
               className={`flex-1 py-2 rounded-xl text-sm font-medium transition-all capitalize ${
                 method === m ? 'bg-accent text-bg' : 'text-slate-400 hover:text-white'
               }`}
@@ -134,44 +160,6 @@ export function LoginPage() {
           </button>
         )}
 
-        {/* Email */}
-        {method === 'email' && step === 'input' && (
-          <div className="flex flex-col gap-3">
-            <input
-              type="email"
-              placeholder="your@email.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && sendEmailLink()}
-              className="w-full bg-card text-white rounded-xl px-4 py-3 text-sm border border-slate-700 focus:outline-none focus:border-accent placeholder-slate-500"
-            />
-            <button
-              onClick={sendEmailLink}
-              disabled={loading || !privacyAccepted || !email.includes('@')}
-              className="w-full bg-accent text-bg font-bold py-4 rounded-2xl active:scale-95 transition-all disabled:opacity-50"
-            >
-              {loading ? 'Sending…' : 'Send magic link'}
-            </button>
-          </div>
-        )}
-
-        {method === 'email' && step === 'sent' && (
-          <div className="bg-card rounded-2xl p-5 flex flex-col items-center gap-3 text-center">
-            <span className="text-3xl">📬</span>
-            <p className="text-white font-semibold">Check your inbox</p>
-            <p className="text-slate-400 text-sm">
-              We sent a login link to <span className="text-accent">{email}</span>.
-              Click it to sign in — no password needed.
-            </p>
-            <button
-              onClick={() => setStep('input')}
-              className="text-slate-500 text-xs underline mt-1"
-            >
-              Use a different email
-            </button>
-          </div>
-        )}
-
         {/* Phone */}
         {method === 'phone' && step === 'input' && (
           <div className="flex flex-col gap-3">
@@ -190,6 +178,11 @@ export function LoginPage() {
               onKeyDown={(e) => e.key === 'Enter' && sendPhoneOtp()}
               className="w-full bg-card text-white rounded-xl px-4 py-3 text-sm border border-slate-700 focus:outline-none focus:border-accent placeholder-slate-500"
             />
+            {phone.length >= 8 && (
+              <p className="text-xs text-slate-500 -mt-1 px-1">
+                Will send to: <span className="text-accent">{normalizePhone(phone)}</span>
+              </p>
+            )}
             <button
               onClick={sendPhoneOtp}
               disabled={loading || !privacyAccepted || phone.length < 8}
@@ -231,6 +224,97 @@ export function LoginPage() {
           </div>
         )}
 
+        {/* Email + Password */}
+        {method === 'email' && step === 'input' && (
+          <div className="flex flex-col gap-3">
+            {/* Sign In / Register toggle */}
+            <div className="flex bg-card rounded-2xl p-1 gap-1">
+              <button
+                onClick={() => { setAuthMode('signin'); setError(null) }}
+                className={`flex-1 py-2 rounded-xl text-sm font-medium transition-all ${
+                  authMode === 'signin' ? 'bg-accent text-bg' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Sign In
+              </button>
+              <button
+                onClick={() => { setAuthMode('register'); setError(null) }}
+                className={`flex-1 py-2 rounded-xl text-sm font-medium transition-all ${
+                  authMode === 'register' ? 'bg-accent text-bg' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Register
+              </button>
+            </div>
+
+            {authMode === 'register' && (
+              <input
+                type="text"
+                placeholder="Your name or nickname"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                className="w-full bg-card text-white rounded-xl px-4 py-3 text-sm border border-slate-700 focus:outline-none focus:border-accent placeholder-slate-500"
+              />
+            )}
+            <input
+              type="email"
+              placeholder="your@email.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full bg-card text-white rounded-xl px-4 py-3 text-sm border border-slate-700 focus:outline-none focus:border-accent placeholder-slate-500"
+            />
+            <input
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  authMode === 'signin' ? signInWithPassword() : registerWithPassword()
+                }
+              }}
+              className="w-full bg-card text-white rounded-xl px-4 py-3 text-sm border border-slate-700 focus:outline-none focus:border-accent placeholder-slate-500"
+            />
+            {authMode === 'register' && (
+              <input
+                type="password"
+                placeholder="Confirm password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && registerWithPassword()}
+                className="w-full bg-card text-white rounded-xl px-4 py-3 text-sm border border-slate-700 focus:outline-none focus:border-accent placeholder-slate-500"
+              />
+            )}
+            <button
+              onClick={authMode === 'signin' ? signInWithPassword : registerWithPassword}
+              disabled={loading || !privacyAccepted || !email.includes('@') || password.length < 1}
+              className="w-full bg-accent text-bg font-bold py-4 rounded-2xl active:scale-95 transition-all disabled:opacity-50"
+            >
+              {loading
+                ? (authMode === 'signin' ? 'Signing in…' : 'Creating account…')
+                : (authMode === 'signin' ? 'Sign In' : 'Create Account')}
+            </button>
+          </div>
+        )}
+
+        {method === 'email' && step === 'confirm' && (
+          <div className="bg-card rounded-2xl p-5 flex flex-col items-center gap-3 text-center">
+            <span className="text-3xl">📬</span>
+            <p className="text-white font-semibold">Confirm your email</p>
+            <p className="text-slate-400 text-sm">
+              We sent a confirmation link to <span className="text-accent">{email}</span>.
+              Click it to activate your account.
+            </p>
+            <button
+              onClick={() => { setStep('input'); setAuthMode('register') }}
+              className="text-slate-500 text-xs underline mt-1"
+            >
+              Use a different email
+            </button>
+          </div>
+        )}
+
+        {/* Privacy checkbox — show on all input steps */}
         {step === 'input' && (
           <div className="flex items-center gap-2 mt-1 justify-end w-full">
             <label htmlFor="privacy-cb" className="text-sm text-slate-400 leading-snug cursor-pointer select-none text-right">
