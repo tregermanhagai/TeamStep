@@ -1,11 +1,9 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useSession } from '../hooks/useSession'
 
 export function OnboardingPage() {
-  const { player, refetchPlayer } = useSession()
-  const navigate = useNavigate()
+  const { player } = useSession()
   const [name, setName] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -23,8 +21,9 @@ export function OnboardingPage() {
       setSaving(false)
       return
     }
-    refetchPlayer()
-    navigate('/dashboard', { replace: true })
+    // Full reload so every useSession instance re-reads the updated name from DB,
+    // preventing AuthGuard from bouncing back to /onboarding due to stale state.
+    window.location.replace('/dashboard')
   }
 
   return (
