@@ -11,7 +11,7 @@ type AuthMode = 'signin' | 'register'
 export function LoginPage() {
   const { t } = useLocale()
   const navigate = useNavigate()
-  const [method, setMethod] = useState<Method>('phone')
+  const [method, setMethod] = useState<Method>('email')
   const [step, setStep] = useState<Step>('input')
   const [authMode, setAuthMode] = useState<AuthMode>('signin')
   const [email, setEmail] = useState('')
