@@ -9,6 +9,7 @@ import { LeaderboardPage } from './pages/LeaderboardPage'
 import { ReportPage } from './pages/ReportPage'
 import { ProfilePage } from './pages/ProfilePage'
 import { ScoringPage } from './pages/admin/ScoringPage'
+import { PracticeReportPage } from './pages/admin/PracticeReportPage'
 import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage'
 import { BottomNav } from './components/BottomNav'
 import { supabase } from './lib/supabase'
@@ -67,6 +68,10 @@ export default function App() {
         <Route
           path="/admin/scoring"
           element={<AuthGuard><ScoringPage /><BottomNav /></AuthGuard>}
+        />
+        <Route
+          path="/admin/practice"
+          element={<AuthGuard><PracticeReportPage /></AuthGuard>}
         />
         <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
