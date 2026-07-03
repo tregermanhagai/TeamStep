@@ -18,6 +18,7 @@ export function LoginPage() {
   const [otp, setOtp] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [privacyAccepted, setPrivacyAccepted] = useState(true)
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -27,6 +28,7 @@ export function LoginPage() {
   }, [navigate])
 
   async function signInGoogle() {
+    sessionStorage.setItem('ts_privacy_ts', new Date().toISOString())
     setLoading(true)
     await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -36,6 +38,7 @@ export function LoginPage() {
   }
 
   async function sendEmailLink() {
+    sessionStorage.setItem('ts_privacy_ts', new Date().toISOString())
     setLoading(true)
     setError(null)
     const { error: err } = await supabase.auth.signInWithOtp({
@@ -58,6 +61,7 @@ export function LoginPage() {
   }
 
   async function sendPhoneOtp() {
+    sessionStorage.setItem('ts_privacy_ts', new Date().toISOString())
     setLoading(true)
     setError(null)
     const normalized = normalizePhone(phone)
@@ -76,12 +80,18 @@ export function LoginPage() {
       type: 'sms',
     })
     if (err) { setError(err.message || err.code || 'Verification failed. Please try again.'); setLoading(false); return }
-    // Save the name they entered — overwrite the phone-number placeholder
-    if (displayName.trim() && data.user) {
+    if (data.user) {
       await supabase
         .from('players')
-        .update({ full_name: displayName.trim() })
+        .update({ privacy_accepted_at: new Date().toISOString() })
         .eq('player_id', data.user.id)
+        .is('privacy_accepted_at', null)
+      if (displayName.trim()) {
+        await supabase
+          .from('players')
+          .update({ full_name: displayName.trim() })
+          .eq('player_id', data.user.id)
+      }
     }
     setLoading(false)
   }
@@ -115,7 +125,7 @@ export function LoginPage() {
         {method === 'google' && (
           <button
             onClick={signInGoogle}
-            disabled={loading}
+            disabled={loading || !privacyAccepted}
             className="flex items-center justify-center gap-3 bg-white text-gray-800 font-semibold px-6 py-4 rounded-2xl shadow-lg hover:bg-gray-100 active:scale-95 transition-all disabled:opacity-60"
           >
             <GoogleIcon />
@@ -136,7 +146,7 @@ export function LoginPage() {
             />
             <button
               onClick={sendEmailLink}
-              disabled={loading || !email.includes('@')}
+              disabled={loading || !privacyAccepted || !email.includes('@')}
               className="w-full bg-accent text-bg font-bold py-4 rounded-2xl active:scale-95 transition-all disabled:opacity-50"
             >
               {loading ? 'Sending…' : 'Send magic link'}
@@ -181,7 +191,7 @@ export function LoginPage() {
             />
             <button
               onClick={sendPhoneOtp}
-              disabled={loading || phone.length < 8}
+              disabled={loading || !privacyAccepted || phone.length < 8}
               className="w-full bg-accent text-bg font-bold py-4 rounded-2xl active:scale-95 transition-all disabled:opacity-50"
             >
               {loading ? 'Sending…' : 'Send verification code'}
@@ -218,6 +228,35 @@ export function LoginPage() {
               Wrong number? Go back
             </button>
           </div>
+        )}
+
+        {step === 'input' && (
+          <div className="flex items-start gap-2 mt-1">
+            <input
+              id="privacy-cb"
+              type="checkbox"
+              checked={privacyAccepted}
+              onChange={(e) => setPrivacyAccepted(e.target.checked)}
+              className="mt-0.5 w-4 h-4 cursor-pointer accent-[#06C8E0]"
+            />
+            <label htmlFor="privacy-cb" className="text-sm text-slate-400 leading-snug cursor-pointer select-none">
+              I agree to the{' '}
+              <a
+                href="/privacy-policy"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-accent underline"
+                onClick={(e) => e.stopPropagation()}
+              >
+                Privacy Policy
+              </a>
+            </label>
+          </div>
+        )}
+        {!privacyAccepted && step === 'input' && (
+          <p className="text-red-400 text-xs -mt-1">
+            You must accept the Privacy Policy to continue.
+          </p>
         )}
 
         {error && (

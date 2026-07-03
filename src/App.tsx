@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { useEffect } from 'react'
 import { LocaleProvider } from './contexts/LocaleContext'
 import { useSession } from './hooks/useSession'
 import { LoginPage } from './pages/LoginPage'
@@ -8,7 +9,9 @@ import { LeaderboardPage } from './pages/LeaderboardPage'
 import { ReportPage } from './pages/ReportPage'
 import { ProfilePage } from './pages/ProfilePage'
 import { ScoringPage } from './pages/admin/ScoringPage'
+import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage'
 import { BottomNav } from './components/BottomNav'
+import { supabase } from './lib/supabase'
 
 function AuthGuard({ children, skipOnboardingCheck = false }: {
   children: React.ReactNode
@@ -22,6 +25,20 @@ function AuthGuard({ children, skipOnboardingCheck = false }: {
 }
 
 export default function App() {
+  useEffect(() => {
+    const ts = sessionStorage.getItem('ts_privacy_ts')
+    if (!ts) return
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) return
+      supabase
+        .from('players')
+        .update({ privacy_accepted_at: ts })
+        .eq('player_id', session.user.id)
+        .is('privacy_accepted_at', null)
+        .then(() => sessionStorage.removeItem('ts_privacy_ts'))
+    })
+  }, [])
+
   return (
     <LocaleProvider>
     <BrowserRouter>
@@ -51,6 +68,7 @@ export default function App() {
           path="/admin/scoring"
           element={<AuthGuard><ScoringPage /><BottomNav /></AuthGuard>}
         />
+        <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </BrowserRouter>
