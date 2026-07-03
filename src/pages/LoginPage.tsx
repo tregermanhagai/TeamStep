@@ -231,15 +231,8 @@ export function LoginPage() {
         )}
 
         {step === 'input' && (
-          <div className="flex items-start gap-2 mt-1 self-start w-full">
-            <input
-              id="privacy-cb"
-              type="checkbox"
-              checked={privacyAccepted}
-              onChange={(e) => setPrivacyAccepted(e.target.checked)}
-              className="mt-0.5 w-4 h-4 cursor-pointer accent-[#06C8E0] shrink-0"
-            />
-            <label htmlFor="privacy-cb" className="text-sm text-slate-400 leading-snug cursor-pointer select-none">
+          <div className="flex items-center gap-2 mt-1 justify-end w-full">
+            <label htmlFor="privacy-cb" className="text-sm text-slate-400 leading-snug cursor-pointer select-none text-right">
               I agree to the{' '}
               <a
                 href="/privacy-policy"
@@ -251,10 +244,17 @@ export function LoginPage() {
                 Privacy Policy
               </a>
             </label>
+            <input
+              id="privacy-cb"
+              type="checkbox"
+              checked={privacyAccepted}
+              onChange={(e) => setPrivacyAccepted(e.target.checked)}
+              className="w-4 h-4 cursor-pointer accent-[#06C8E0] shrink-0"
+            />
           </div>
         )}
         {!privacyAccepted && step === 'input' && (
-          <p className="text-red-400 text-xs -mt-1 text-left">
+          <p className="text-red-400 text-xs -mt-1 text-right">
             You must accept the Privacy Policy to continue.
           </p>
         )}
