@@ -57,7 +57,9 @@ export function useSession(): SessionState {
     // Fallback: trigger may have failed — create the row via SECURITY DEFINER RPC
     if (!data) {
       const u = s.user
+      const storedName = sessionStorage.getItem('ts_display_name')
       const fullName =
+        storedName ||
         u.user_metadata?.full_name ??
         u.user_metadata?.name ??
         (u.email ? u.email.split('@')[0] : null) ??
@@ -69,6 +71,8 @@ export function useSession(): SessionState {
         p_email:     u.email  ?? null,
         p_phone:     u.phone  ?? null,
       })
+
+      if (storedName) sessionStorage.removeItem('ts_display_name')
 
       const { data: created } = await supabase
         .from('players')

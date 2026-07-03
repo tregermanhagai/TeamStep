@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useSession } from '../hooks/useSession'
 import { useLocale } from '../contexts/LocaleContext'
@@ -11,7 +12,10 @@ import { AdminRoleManager } from '../components/AdminRoleManager'
 
 export function ProfilePage() {
   const { t, locale, setLocale } = useLocale()
-  const { player, session, isAdmin, loading } = useSession()
+  const { player, session, isAdmin, loading, refetchPlayer } = useSession()
+  const [editingName, setEditingName] = useState(false)
+  const [nameInput, setNameInput] = useState('')
+  const [savingName, setSavingName] = useState(false)
   const isSuperAdmin = session?.user?.email === 'hagai1973@gmail.com'
   const { data: history } = useMyStats(player?.player_id)
   const { data: leaderboard } = useLeaderboard()
@@ -21,6 +25,15 @@ export function ProfilePage() {
 
   async function signOut() {
     await supabase.auth.signOut()
+  }
+
+  async function saveName() {
+    if (!nameInput.trim() || !player) return
+    setSavingName(true)
+    await supabase.from('players').update({ full_name: nameInput.trim() }).eq('player_id', player.player_id)
+    setSavingName(false)
+    setEditingName(false)
+    refetchPlayer()
   }
 
   if (loading) return (
@@ -47,7 +60,32 @@ export function ProfilePage() {
       <div className="px-4 pt-12 pb-6 flex flex-col items-center gap-4">
         <Avatar player={player} size={80} />
         <div className="text-center">
-          <h1 className="text-xl font-bold text-white">{player.full_name}</h1>
+          {editingName ? (
+            <div className="flex items-center justify-center gap-2">
+              <input
+                value={nameInput}
+                onChange={(e) => setNameInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') saveName(); if (e.key === 'Escape') setEditingName(false) }}
+                autoFocus
+                className="bg-card text-white rounded-xl px-3 py-1.5 text-sm border border-slate-600 focus:outline-none focus:border-accent w-40"
+              />
+              <button onClick={saveName} disabled={savingName} className="text-accent text-sm font-semibold disabled:opacity-50">
+                {savingName ? '…' : 'Save'}
+              </button>
+              <button onClick={() => setEditingName(false)} className="text-slate-500 text-sm">✕</button>
+            </div>
+          ) : (
+            <div className="flex items-center justify-center gap-2">
+              <h1 className="text-xl font-bold text-white">{player.full_name}</h1>
+              <button
+                onClick={() => { setNameInput(player.full_name); setEditingName(true) }}
+                className="text-slate-500 hover:text-slate-300 text-base leading-none mt-0.5"
+                aria-label="Edit name"
+              >
+                ✎
+              </button>
+            </div>
+          )}
           <p className="text-slate-400 text-sm">{session?.user?.email}</p>
           {myRank && <p className="text-accent text-sm font-medium mt-1">{t('rank')} #{myRank}</p>}
         </div>

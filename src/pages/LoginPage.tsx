@@ -62,6 +62,7 @@ export function LoginPage() {
 
   async function sendPhoneOtp() {
     sessionStorage.setItem('ts_privacy_ts', new Date().toISOString())
+    if (displayName.trim()) sessionStorage.setItem('ts_display_name', displayName.trim())
     setLoading(true)
     setError(null)
     const normalized = normalizePhone(phone)
