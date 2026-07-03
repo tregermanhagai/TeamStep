@@ -15,6 +15,7 @@ import { supabase } from '../lib/supabase'
 
 type TeamColor = 'Pink' | 'Blue' | 'Yellow' | 'Other'
 const COLORS: TeamColor[] = ['Pink', 'Blue', 'Yellow', 'Other']
+const COLOR_LABELS: Record<TeamColor, string> = { Pink: 'ורוד', Blue: 'כחול', Yellow: 'צהוב', Other: 'אחר' }
 function todayStr() { return new Date().toISOString().split('T')[0] }
 
 type PanelFilter = 'all' | 'last'
@@ -224,10 +225,10 @@ export function LeaderboardPage() {
           {/* Admin inline report — always shown for admins */}
           {isAdmin && (
             <div className="mt-3 border-t border-slate-700/50 pt-3">
-              <p className="text-xs text-accent font-semibold mb-2">Today's Practice Stats</p>
+              <p className="text-xs text-accent font-semibold mb-2 text-right">נתוני אימון היום</p>
               <div className="grid grid-cols-4 gap-2 mb-3">
                 {(['goals', 'assists', 'teamWon', 'cleanSheet'] as const).map(field => {
-                  const labels = { goals: 'Goals', assists: 'Assists', teamWon: 'Wins', cleanSheet: 'CS' }
+                  const labels = { goals: 'שער', assists: 'בישול', teamWon: "נצ'", cleanSheet: 'ספיגה' }
                   return (
                     <div key={field} className="flex flex-col items-center gap-1">
                       <p className="text-xs text-slate-400">{labels[field]}</p>
@@ -240,19 +241,19 @@ export function LeaderboardPage() {
                   )
                 })}
               </div>
-              <div className="flex items-center gap-2 mb-3 flex-wrap">
-                <p className="text-xs text-slate-400">Team:</p>
+              <div className="flex items-center gap-2 mb-3 flex-wrap justify-end">
+                <p className="text-xs text-slate-400">:קבוצה</p>
                 {COLORS.map(c => (
-                  <button key={c} onClick={() => setAdminStats(s => ({ ...s, color: c }))} className={`px-2 py-0.5 rounded-lg text-xs font-medium transition-all ${adminStats.color === c ? 'bg-accent text-bg' : 'bg-slate-700 text-slate-300'}`}>{c}</button>
+                  <button key={c} onClick={() => setAdminStats(s => ({ ...s, color: c }))} className={`px-2 py-0.5 rounded-lg text-xs font-medium transition-all ${adminStats.color === c ? 'bg-accent text-bg' : 'bg-slate-700 text-slate-300'}`}>{COLOR_LABELS[c]}</button>
                 ))}
               </div>
-              {adminSaved && <p className="text-green-400 text-xs mb-2 text-center">Saved for today</p>}
+              {adminSaved && <p className="text-green-400 text-xs mb-2 text-center">נשמר בהצלחה</p>}
               <button
                 onClick={saveAdminReport}
                 disabled={adminSaving}
                 className="w-full bg-accent text-bg text-sm font-bold py-2.5 rounded-xl active:scale-95 transition-all disabled:opacity-50"
               >
-                {adminSaving ? 'Saving…' : 'Save for Today'}
+                {adminSaving ? 'שומר...' : 'שמור נתוני אימון'}
               </button>
             </div>
           )}
