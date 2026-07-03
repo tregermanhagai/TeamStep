@@ -11,7 +11,11 @@ import { Avatar } from '../components/Avatar'
 import { useLocale } from '../contexts/LocaleContext'
 import { PlayerScore, SessionMatchStat } from '../types'
 import { AppFooter } from '../components/AppFooter'
-import { AdminStatUpdater } from '../components/AdminStatUpdater'
+import { supabase } from '../lib/supabase'
+
+type TeamColor = 'Pink' | 'Blue' | 'Yellow' | 'Other'
+const COLORS: TeamColor[] = ['Pink', 'Blue', 'Yellow', 'Other']
+function todayStr() { return new Date().toISOString().split('T')[0] }
 
 type PanelFilter = 'all' | 'last'
 type SortBy = 'points' | 'goals' | 'assists' | 'wins'
@@ -39,6 +43,54 @@ export function LeaderboardPage() {
   const { data: selectedHistory, loading: histLoading, refetch: refetchStats } = useMyStats(selectedPlayer?.player_id)
   const { data: customTotals } = usePlayerCustomTotals(selectedPlayer?.player_id)
   const ctTotal = customTotals.find((c) => c.label === 'Continuous Training')?.total ?? 0
+
+  // Admin inline report state
+  const [adminStats, setAdminStats] = useState({ goals: 0, assists: 0, teamWon: 0, cleanSheet: 0, color: 'Other' as TeamColor })
+  const [adminSaving, setAdminSaving] = useState(false)
+  const [adminSaved, setAdminSaved] = useState(false)
+
+  useEffect(() => {
+    setAdminSaved(false)
+    if (!selectedPlayer || !isAdmin) return
+    loadAdminReport(selectedPlayer.player_id)
+  }, [selectedPlayer?.player_id])
+
+  async function loadAdminReport(playerId: string) {
+    const { data: match } = await supabase
+      .from('matches')
+      .select('match_id')
+      .eq('match_date', todayStr())
+      .maybeSingle()
+    if (!match) { setAdminStats({ goals: 0, assists: 0, teamWon: 0, cleanSheet: 0, color: 'Other' }); return }
+    const { data: report } = await supabase
+      .from('reports')
+      .select('*')
+      .eq('player_id', playerId)
+      .eq('match_id', match.match_id)
+      .maybeSingle()
+    if (report) {
+      setAdminStats({ goals: report.goals ?? 0, assists: report.assists ?? 0, teamWon: report.team_won ?? 0, cleanSheet: report.clean_sheet ?? 0, color: (report.team_color ?? 'Other') as TeamColor })
+    } else {
+      setAdminStats({ goals: 0, assists: 0, teamWon: 0, cleanSheet: 0, color: 'Other' })
+    }
+  }
+
+  async function saveAdminReport() {
+    if (!selectedPlayer) return
+    setAdminSaving(true)
+    setAdminSaved(false)
+    const { error } = await supabase.rpc('admin_upsert_report', {
+      p_player_id:   selectedPlayer.player_id,
+      p_match_date:  todayStr(),
+      p_goals:       adminStats.goals,
+      p_assists:     adminStats.assists,
+      p_team_won:    adminStats.teamWon,
+      p_clean_sheet: adminStats.cleanSheet,
+      p_team_color:  adminStats.color,
+    })
+    setAdminSaving(false)
+    if (!error) { setAdminSaved(true); refetchStats() }
+  }
 
   // Pre-select player when navigated from dashboard
   useEffect(() => {
@@ -169,13 +221,40 @@ export function LeaderboardPage() {
             />
           )}
 
-          {/* Admin stat updater — only when last session selected and session exists */}
-          {isAdmin && panelFilter === 'last' && filteredHistory[0] && (
-            <AdminStatUpdater
-              playerId={selectedPlayer.player_id}
-              matchDate={filteredHistory[0].match_date}
-              onSuccess={refetchStats}
-            />
+          {/* Admin inline report — always shown for admins */}
+          {isAdmin && (
+            <div className="mt-3 border-t border-slate-700/50 pt-3">
+              <p className="text-xs text-accent font-semibold mb-2">Today's Practice Stats</p>
+              <div className="grid grid-cols-4 gap-2 mb-3">
+                {(['goals', 'assists', 'teamWon', 'cleanSheet'] as const).map(field => {
+                  const labels = { goals: 'Goals', assists: 'Assists', teamWon: 'Wins', cleanSheet: 'CS' }
+                  return (
+                    <div key={field} className="flex flex-col items-center gap-1">
+                      <p className="text-xs text-slate-400">{labels[field]}</p>
+                      <div className="flex items-center gap-1">
+                        <button onClick={() => setAdminStats(s => ({ ...s, [field]: Math.max(0, s[field] - 1) }))} className="w-7 h-7 rounded-full bg-slate-700 text-white flex items-center justify-center active:scale-95">−</button>
+                        <span className="text-white font-bold text-sm w-4 text-center">{adminStats[field]}</span>
+                        <button onClick={() => setAdminStats(s => ({ ...s, [field]: Math.min(5, s[field] + 1) }))} className="w-7 h-7 rounded-full bg-slate-700 text-white flex items-center justify-center active:scale-95">+</button>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+              <div className="flex items-center gap-2 mb-3 flex-wrap">
+                <p className="text-xs text-slate-400">Team:</p>
+                {COLORS.map(c => (
+                  <button key={c} onClick={() => setAdminStats(s => ({ ...s, color: c }))} className={`px-2 py-0.5 rounded-lg text-xs font-medium transition-all ${adminStats.color === c ? 'bg-accent text-bg' : 'bg-slate-700 text-slate-300'}`}>{c}</button>
+                ))}
+              </div>
+              {adminSaved && <p className="text-green-400 text-xs mb-2 text-center">Saved for today</p>}
+              <button
+                onClick={saveAdminReport}
+                disabled={adminSaving}
+                className="w-full bg-accent text-bg text-sm font-bold py-2.5 rounded-xl active:scale-95 transition-all disabled:opacity-50"
+              >
+                {adminSaving ? 'Saving…' : 'Save for Today'}
+              </button>
+            </div>
           )}
         </div>
       )}
