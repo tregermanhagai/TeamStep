@@ -60,11 +60,11 @@ export function useSession(): SessionState {
       const storedName = sessionStorage.getItem('ts_display_name')
       const fullName =
         storedName ||
-        u.user_metadata?.full_name ??
+        (u.user_metadata?.full_name ??
         u.user_metadata?.name ??
         (u.email ? u.email.split('@')[0] : null) ??
         u.phone ??
-        'New Player'
+        'New Player')
 
       await supabase.rpc('ensure_player_exists', {
         p_full_name: fullName,
