@@ -18,7 +18,7 @@ export function LoginPage() {
   const [otp, setOtp] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [privacyAccepted, setPrivacyAccepted] = useState(true)
+  const [privacyAccepted, setPrivacyAccepted] = useState(false)
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -231,13 +231,13 @@ export function LoginPage() {
         )}
 
         {step === 'input' && (
-          <div className="flex items-start gap-2 mt-1">
+          <div className="flex items-start gap-2 mt-1 self-start w-full">
             <input
               id="privacy-cb"
               type="checkbox"
               checked={privacyAccepted}
               onChange={(e) => setPrivacyAccepted(e.target.checked)}
-              className="mt-0.5 w-4 h-4 cursor-pointer accent-[#06C8E0]"
+              className="mt-0.5 w-4 h-4 cursor-pointer accent-[#06C8E0] shrink-0"
             />
             <label htmlFor="privacy-cb" className="text-sm text-slate-400 leading-snug cursor-pointer select-none">
               I agree to the{' '}
@@ -254,7 +254,7 @@ export function LoginPage() {
           </div>
         )}
         {!privacyAccepted && step === 'input' && (
-          <p className="text-red-400 text-xs -mt-1">
+          <p className="text-red-400 text-xs -mt-1 text-left">
             You must accept the Privacy Policy to continue.
           </p>
         )}
