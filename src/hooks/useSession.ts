@@ -73,11 +73,12 @@ export function useSession(): SessionState {
         u.phone ??
         'New Player')
 
-      await supabase.rpc('ensure_player_exists', {
+      const { error: rpcErr } = await supabase.rpc('ensure_player_exists', {
         p_full_name: fullName,
         p_email:     u.email  ?? null,
         p_phone:     u.phone  ?? null,
       })
+      if (rpcErr) console.error('[useSession] ensure_player_exists failed:', rpcErr)
 
       if (storedName) sessionStorage.removeItem('ts_display_name')
 
