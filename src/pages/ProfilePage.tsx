@@ -118,9 +118,17 @@ export function ProfilePage() {
         </div>
         <div className="px-4 py-3">
           <p className="text-xs text-slate-400">{t('bestSession')}</p>
-          <p className="text-white font-semibold">
-            {history.length > 0 ? Math.max(...history.map((h) => h.match_pts)) + ' ' + t('pts') : '—'}
-          </p>
+          {history.length > 0 ? (() => {
+            const best = history.reduce((a, b) => b.match_pts > a.match_pts ? b : a)
+            const d = new Date(best.match_date + 'T12:00:00')
+            const dateStr = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`
+            return (
+              <div className="flex items-baseline gap-2">
+                <p className="text-white font-semibold">{best.match_pts} {t('pts')}</p>
+                <p className="text-xs text-slate-500">{dateStr}</p>
+              </div>
+            )
+          })() : <p className="text-white font-semibold">—</p>}
         </div>
         <div className="px-4 py-3">
           <p className="text-xs text-slate-400">{t('role')}</p>
