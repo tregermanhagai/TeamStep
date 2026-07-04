@@ -24,7 +24,6 @@ export function ScoringPage() {
   const [newPts, setNewPts] = useState(1)
   const [newMax, setNewMax] = useState(1)
   const [adding, setAdding] = useState(false)
-  const [resetting, setResetting] = useState(false)
 
   useEffect(() => {
     supabase
@@ -78,14 +77,6 @@ export function ScoringPage() {
       .update({ is_active: !cat.is_active })
       .eq('category_id', cat.category_id)
     await reload()
-  }
-
-  async function resetScores() {
-    if (!confirm('⚠️ This will delete ALL match reports and reset everyone\'s score to zero.\n\nThis cannot be undone. Are you sure?')) return
-    setResetting(true)
-    await supabase.from('report_custom_stats').delete().neq('report_id', '00000000-0000-0000-0000-000000000000')
-    await supabase.from('reports').delete().neq('report_id', '00000000-0000-0000-0000-000000000000')
-    setResetting(false)
   }
 
   async function deleteCategory(categoryId: string) {
@@ -226,22 +217,6 @@ export function ScoringPage() {
         </div>
       </div>
 
-      {/* Danger zone */}
-      <div className="mx-4 mt-6 mb-4">
-        <div className="bg-red-950/30 border border-red-900/50 rounded-2xl p-4">
-          <h2 className="text-sm font-semibold text-red-400 mb-1">Danger Zone</h2>
-          <p className="text-xs text-slate-500 mb-3">
-            Reset all scores to zero. Deletes every match report permanently.
-          </p>
-          <button
-            onClick={resetScores}
-            disabled={resetting}
-            className="w-full bg-red-700 hover:bg-red-600 text-white font-bold py-3 rounded-xl text-sm active:scale-95 transition-all disabled:opacity-60"
-          >
-            {resetting ? 'Resetting…' : '🗑 Reset All Scores'}
-          </button>
-        </div>
-      </div>
     </div>
   )
 }

@@ -16,6 +16,7 @@ export function ProfilePage() {
   const [editingName, setEditingName] = useState(false)
   const [nameInput, setNameInput] = useState('')
   const [savingName, setSavingName] = useState(false)
+  const [resetting, setResetting] = useState(false)
   const isSuperAdmin = session?.user?.email === 'hagai1973@gmail.com'
   const { data: history } = useMyStats(player?.player_id)
   const { data: leaderboard } = useLeaderboard()
@@ -25,6 +26,16 @@ export function ProfilePage() {
 
   async function signOut() {
     await supabase.auth.signOut()
+  }
+
+  async function resetScores() {
+    if (!player) return
+    if (!confirm('⚠️ This will delete ALL match reports and reset everyone\'s score to zero.\n\nThis cannot be undone. Are you sure?')) return
+    setResetting(true)
+    const { error } = await supabase.rpc('admin_reset_scores', { p_team_id: player.team_id })
+    setResetting(false)
+    if (error) alert('Reset failed: ' + error.message)
+    else alert('All scores have been reset to zero.')
   }
 
   async function saveName() {
@@ -132,6 +143,16 @@ export function ProfilePage() {
               <span className="text-slate-500 text-lg">›</span>
             </Link>
             <Link
+              to="/admin/players"
+              className="flex items-center justify-between px-4 py-3 hover:bg-slate-700/30 transition-colors"
+            >
+              <div>
+                <p className="text-sm text-white font-medium">Manage Players</p>
+                <p className="text-xs text-slate-400">View and delete players</p>
+              </div>
+              <span className="text-slate-500 text-lg">›</span>
+            </Link>
+            <Link
               to="/admin/scoring"
               className="flex items-center justify-between px-4 py-3 hover:bg-slate-700/30 transition-colors"
             >
@@ -149,6 +170,17 @@ export function ProfilePage() {
                 <AdminRoleManager />
               </div>
             )}
+          </div>
+          <div className="mt-3 bg-red-950/30 border border-red-900/50 rounded-2xl p-4">
+            <p className="text-xs text-red-400 font-semibold mb-1">Danger Zone</p>
+            <p className="text-xs text-slate-500 mb-3">Reset all scores to zero. Deletes every match report permanently.</p>
+            <button
+              onClick={resetScores}
+              disabled={resetting}
+              className="w-full bg-red-700 hover:bg-red-600 text-white font-bold py-3 rounded-xl text-sm active:scale-95 transition-all disabled:opacity-60"
+            >
+              {resetting ? 'Resetting…' : 'Reset All Scores'}
+            </button>
           </div>
         </div>
       )}
