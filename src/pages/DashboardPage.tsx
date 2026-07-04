@@ -17,7 +17,7 @@ type Filter = 'all' | 'last'
 export function DashboardPage() {
   const { t } = useLocale()
   const navigate = useNavigate()
-  const [filter, setFilter] = useState<Filter>('all')
+  const [filter, setFilter] = useState<Filter>('last')
   const [selectedSession, setSelectedSession] = useState<{ data: typeof history[0]; index: number } | null>(null)
   const { player } = useSession()
   const { data: leaderboard, loading: lbLoading } = useLeaderboard()
@@ -68,7 +68,7 @@ export function DashboardPage() {
 
       {/* Filter tabs */}
       <div className="flex bg-card rounded-2xl p-1 mx-4 mt-4 gap-1">
-        {(['all', 'last'] as Filter[]).map((f) => (
+        {(['last', 'all'] as Filter[]).map((f) => (
           <button
             key={f}
             onClick={() => setFilter(f)}
