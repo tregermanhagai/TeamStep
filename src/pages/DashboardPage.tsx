@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useLocale } from '../contexts/LocaleContext'
 import { useSession } from '../hooks/useSession'
@@ -14,15 +14,27 @@ import { AppFooter } from '../components/AppFooter'
 import { useLastSessionLeaderboard } from '../hooks/useLastSessionLeaderboard'
 
 type Filter = 'all' | 'last'
+type TeamColor = 'Pink' | 'Blue' | 'Yellow' | 'Other'
+const COLORS: TeamColor[] = ['Pink', 'Blue', 'Yellow', 'Other']
+const COLOR_LABELS: Record<TeamColor, string> = { Pink: 'ורוד', Blue: 'כחול', Yellow: 'צהוב', Other: 'אחר' }
+function todayStr() { return new Date().toISOString().split('T')[0] }
 
 export function DashboardPage() {
   const { t } = useLocale()
   const navigate = useNavigate()
   const [filter, setFilter] = useState<Filter>('last')
   const [selectedSession, setSelectedSession] = useState<{ data: typeof history[0]; index: number } | null>(null)
+  const [reportGoals,      setReportGoals]      = useState(0)
+  const [reportAssists,    setReportAssists]    = useState(0)
+  const [reportWon,        setReportWon]        = useState(0)
+  const [reportCS,         setReportCS]         = useState(0)
+  const [reportColor,      setReportColor]      = useState<TeamColor>('Other')
+  const [reportMatchId,    setReportMatchId]    = useState<string | null>(null)
+  const [reportSubmitting, setReportSubmitting] = useState(false)
+  const [reportSaved,      setReportSaved]      = useState(false)
   const { player } = useSession()
   const { data: leaderboard, loading: lbLoading } = useLeaderboard()
-  const { data: history, loading: histLoading } = useMyStats(player?.player_id)
+  const { data: history, loading: histLoading, refetch: refetchHistory } = useMyStats(player?.player_id)
   const { data: customTotals } = usePlayerCustomTotals(player?.player_id)
   const ctTotal = customTotals.find((c) => c.label === 'Continuous Training')?.total ?? 0
 
@@ -52,6 +64,50 @@ export function DashboardPage() {
   const ringPoints  = filter === 'last' ? lastSessionUserPts : (me?.total_points ?? 0)
   const ringMax     = filter === 'last' ? lastSessionMaxPts  : maxPoints
   const ringAvg     = filter === 'last' ? lastSessionAvgPts  : avgPoints
+
+  useEffect(() => {
+    if (!player) return
+    loadTodayReport()
+  }, [player?.player_id])
+
+  async function loadTodayReport() {
+    const { data: matchId } = await supabase.rpc('find_or_create_match', { p_date: todayStr() })
+    if (!matchId) return
+    setReportMatchId(matchId as string)
+    const { data: report } = await supabase
+      .from('reports')
+      .select('*')
+      .eq('player_id', player!.player_id)
+      .eq('match_id', matchId)
+      .maybeSingle()
+    if (report) {
+      setReportGoals(report.goals ?? 0)
+      setReportAssists(report.assists ?? 0)
+      setReportWon(report.team_won ?? 0)
+      setReportCS(report.clean_sheet ?? 0)
+      setReportColor((report.team_color ?? 'Other') as TeamColor)
+    }
+  }
+
+  async function submitReport() {
+    if (!player || !reportMatchId) return
+    setReportSubmitting(true)
+    setReportSaved(false)
+    await supabase.from('reports').upsert({
+      player_id: player.player_id,
+      match_id: reportMatchId,
+      goals: reportGoals,
+      assists: reportAssists,
+      team_won: reportWon,
+      clean_sheet: reportCS,
+      team_color: reportColor,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'player_id,match_id' })
+    setReportSubmitting(false)
+    setReportSaved(true)
+    refetchHistory()
+    setTimeout(() => setReportSaved(false), 2500)
+  }
 
   return (
     <div className="min-h-screen bg-bg pb-nav">
@@ -151,6 +207,48 @@ export function DashboardPage() {
             }
           />
         )}
+      </div>
+
+      {/* Inline session report */}
+      <div className="mx-4 mt-5 bg-card rounded-2xl p-4">
+        <p className="text-sm font-semibold text-white mb-3 text-right">נתוני האימון שלי היום</p>
+        <div className="grid grid-cols-4 gap-2 mb-3">
+          {([
+            { label: 'שער',   value: reportGoals,   set: setReportGoals   },
+            { label: 'בישול', value: reportAssists,  set: setReportAssists },
+            { label: "נצ'",   value: reportWon,      set: setReportWon     },
+            { label: 'ספיגה', value: reportCS,       set: setReportCS      },
+          ] as const).map(({ label, value, set }) => (
+            <div key={label} className="flex flex-col items-center gap-1">
+              <p className="text-xs text-slate-400">{label}</p>
+              <div className="flex items-center gap-1">
+                <button onClick={() => set(Math.max(0, value - 1))} className="w-7 h-7 rounded-full bg-slate-700 text-white flex items-center justify-center active:scale-95">−</button>
+                <span className="text-white font-bold text-sm w-4 text-center">{value}</span>
+                <button onClick={() => set(Math.min(5, value + 1))} className="w-7 h-7 rounded-full bg-slate-700 text-white flex items-center justify-center active:scale-95">+</button>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="flex items-center gap-2 mb-3 flex-wrap justify-end">
+          <p className="text-xs text-slate-400">:קבוצה</p>
+          {COLORS.map(c => (
+            <button
+              key={c}
+              onClick={() => setReportColor(c)}
+              className={`px-2 py-0.5 rounded-lg text-xs font-medium transition-all ${reportColor === c ? 'bg-accent text-bg' : 'bg-slate-700 text-slate-300'}`}
+            >
+              {COLOR_LABELS[c]}
+            </button>
+          ))}
+        </div>
+        {reportSaved && <p className="text-green-400 text-xs mb-2 text-center">נשמר בהצלחה ✓</p>}
+        <button
+          onClick={submitReport}
+          disabled={reportSubmitting || !reportMatchId}
+          className="w-full bg-accent text-bg text-sm font-bold py-2.5 rounded-xl active:scale-95 transition-all disabled:opacity-50"
+        >
+          {reportSubmitting ? 'שומר...' : 'שמור נתוני אימון'}
+        </button>
       </div>
 
       {/* Mini leaderboard */}
