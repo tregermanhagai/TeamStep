@@ -116,7 +116,7 @@ export function LeaderboardPage() {
 
   // Reset panel state when switching player
   useEffect(() => {
-    setPanelFilter('all')
+    setPanelFilter('last')
     setPanelSession(null)
   }, [selectedPlayer?.player_id])
 

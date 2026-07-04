@@ -11,6 +11,7 @@ import { StatPill } from '../components/StatPill'
 import { LeaderboardRow } from '../components/LeaderboardRow'
 import { supabase } from '../lib/supabase'
 import { AppFooter } from '../components/AppFooter'
+import { useLastSessionLeaderboard } from '../hooks/useLastSessionLeaderboard'
 
 type Filter = 'all' | 'last'
 
@@ -41,6 +42,16 @@ export function DashboardPage() {
   const groupSessionAvg = avgMatchesPlayed > 0 ? avgPoints / avgMatchesPlayed : 0
 
   const filteredHistory = filter === 'last' ? history.slice(-1) : history
+
+  const { data: lastSessionMap } = useLastSessionLeaderboard()
+  const lastSessionValues = Object.values(lastSessionMap)
+  const lastSessionUserPts = filteredHistory[0]?.match_pts ?? 0
+  const lastSessionMaxPts  = lastSessionValues.length > 0 ? Math.max(...lastSessionValues.map(s => s.session_pts)) : 0
+  const lastSessionAvgPts  = lastSessionValues.length > 0 ? lastSessionValues.reduce((s, v) => s + v.session_pts, 0) / lastSessionValues.length : 0
+
+  const ringPoints  = filter === 'last' ? lastSessionUserPts : (me?.total_points ?? 0)
+  const ringMax     = filter === 'last' ? lastSessionMaxPts  : maxPoints
+  const ringAvg     = filter === 'last' ? lastSessionAvgPts  : avgPoints
 
   return (
     <div className="min-h-screen bg-bg pb-nav">
@@ -87,9 +98,9 @@ export function DashboardPage() {
           <div className="w-[180px] h-[180px] rounded-full bg-card animate-pulse" />
         ) : (
           <ScoreRing
-            userPoints={me?.total_points ?? 0}
-            teamAvg={avgPoints}
-            maxPoints={maxPoints}
+            userPoints={ringPoints}
+            teamAvg={ringAvg}
+            maxPoints={ringMax}
           />
         )}
       </div>
