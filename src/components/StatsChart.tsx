@@ -26,6 +26,9 @@ export function StatsChart({ data, groupAvg, selectedIndex, onSessionClick }: Pr
   }
 
   const chartData = data.map((s) => ({ date: fmt(s.match_date), pts: s.match_pts }))
+  const maxPts = Math.max(...chartData.map(d => d.pts), 1)
+  const step = maxPts <= 5 ? 1 : maxPts <= 10 ? 2 : 5
+  const yTicks = Array.from({ length: Math.floor(maxPts / step) + 1 }, (_, i) => i * step)
 
   const CustomDot = (props: { cx?: number; cy?: number; index?: number }) => {
     const { cx, cy, index } = props
@@ -62,19 +65,13 @@ export function StatsChart({ data, groupAvg, selectedIndex, onSessionClick }: Pr
         </defs>
         <CartesianGrid strokeDasharray="3 3" stroke="#1E3A5F" vertical={false} />
         <XAxis dataKey="date" tick={{ fill: '#64748B', fontSize: 11 }} axisLine={false} tickLine={false} />
-        <YAxis tick={{ fill: '#64748B', fontSize: 11 }} axisLine={false} tickLine={false} />
+        <YAxis tick={{ fill: '#64748B', fontSize: 11 }} axisLine={false} tickLine={false} ticks={yTicks} domain={[0, yTicks[yTicks.length - 1]]} allowDecimals={false} />
         <Tooltip
           contentStyle={{ background: '#112240', border: 'none', borderRadius: 8, color: '#E2E8F0' }}
           cursor={{ stroke: '#06C8E0', strokeWidth: 1 }}
         />
         {groupAvg !== undefined && groupAvg > 0 && (
-          <ReferenceLine
-            y={groupAvg}
-            stroke="#94A3B8"
-            strokeDasharray="5 4"
-            strokeWidth={1.5}
-            label={{ value: `avg ${Math.round(groupAvg)}`, fill: '#94A3B8', fontSize: 10, position: 'insideTopRight' }}
-          />
+          <ReferenceLine y={groupAvg} stroke="#94A3B8" strokeDasharray="5 4" strokeWidth={1.5} />
         )}
         <Area
           type="monotone"
