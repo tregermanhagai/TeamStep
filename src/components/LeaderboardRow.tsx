@@ -4,6 +4,8 @@ import { Avatar } from './Avatar'
 
 type SortBy = 'points' | 'goals' | 'assists' | 'wins'
 
+type SessionStats = { goals: number; assists: number; wins: number; points: number }
+
 interface Props {
   rank: number
   player: PlayerScore
@@ -11,17 +13,20 @@ interface Props {
   isSelected?: boolean
   sortBy?: SortBy
   onClick?: () => void
+  sessionStats?: SessionStats
 }
 
 const RANK_COLORS: Record<number, string> = { 1: '#FFD700', 2: '#C0C0C0', 3: '#CD7F32' }
 
-export function LeaderboardRow({ rank, player, isMe, isSelected, sortBy = 'points', onClick }: Props) {
+export function LeaderboardRow({ rank, player, isMe, isSelected, sortBy = 'points', onClick, sessionStats }: Props) {
   const rankColor = RANK_COLORS[rank] ?? '#64748B'
+  const goals   = sessionStats?.goals   ?? player.total_goals
+  const assists = sessionStats?.assists ?? player.total_assists
   const statMap: Record<SortBy, { value: number; suffix: string }> = {
-    points:  { value: player.total_points,  suffix: 'pts'  },
-    goals:   { value: player.total_goals,   suffix: 'goals' },
-    assists: { value: player.total_assists, suffix: 'ast'  },
-    wins:    { value: player.total_wins,    suffix: 'wins' },
+    points:  { value: sessionStats?.points ?? player.total_points,  suffix: 'pts'  },
+    goals:   { value: goals,                                        suffix: 'goals' },
+    assists: { value: assists,                                      suffix: 'ast'  },
+    wins:    { value: sessionStats?.wins   ?? player.total_wins,    suffix: 'wins' },
   }
   const { value: statValue, suffix } = statMap[sortBy]
 
@@ -51,8 +56,8 @@ export function LeaderboardRow({ rank, player, isMe, isSelected, sortBy = 'point
       </span>
 
       <div className="flex items-center gap-3 text-xs text-slate-400">
-        <span title="Goals">⚽ {player.total_goals}</span>
-        <span title="Assists">🎯 {player.total_assists}</span>
+        <span title="Goals">⚽ {goals}</span>
+        <span title="Assists">🎯 {assists}</span>
       </div>
 
       <span className="font-bold text-white text-sm w-14 text-right">

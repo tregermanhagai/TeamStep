@@ -4,6 +4,7 @@ import { useSession } from '../hooks/useSession'
 import { useLeaderboard } from '../hooks/useLeaderboard'
 import { useMyStats } from '../hooks/useMyStats'
 import { usePlayerCustomTotals } from '../hooks/usePlayerCustomTotals'
+import { useLastSessionLeaderboard } from '../hooks/useLastSessionLeaderboard'
 import { LeaderboardRow } from '../components/LeaderboardRow'
 import { StatPill } from '../components/StatPill'
 import { StatsChart } from '../components/StatsChart'
@@ -29,10 +30,22 @@ export function LeaderboardPage() {
 
   const [sortBy, setSortBy] = useState<SortBy>('points')
   const [selectedPlayer, setSelectedPlayer] = useState<PlayerScore | null>(null)
-  const [panelFilter, setPanelFilter] = useState<PanelFilter>('all')
+  const [panelFilter, setPanelFilter] = useState<PanelFilter>('last')
   const [panelSession, setPanelSession] = useState<{ data: SessionMatchStat; index: number } | null>(null)
 
+  const { data: lastSessionMap } = useLastSessionLeaderboard()
+
   const sortedData = [...data].sort((a, b) => {
+    if (panelFilter === 'last') {
+      const la = lastSessionMap[a.player_id] ?? { session_pts: 0, goals: 0, assists: 0, team_won: 0 }
+      const lb = lastSessionMap[b.player_id] ?? { session_pts: 0, goals: 0, assists: 0, team_won: 0 }
+      switch (sortBy) {
+        case 'goals':   return lb.goals    - la.goals    || lb.session_pts - la.session_pts
+        case 'assists': return lb.assists  - la.assists  || lb.session_pts - la.session_pts
+        case 'wins':    return lb.team_won - la.team_won || lb.session_pts - la.session_pts
+        default:        return lb.session_pts - la.session_pts
+      }
+    }
     switch (sortBy) {
       case 'goals':   return b.total_goals   - a.total_goals   || b.total_points - a.total_points
       case 'assists': return b.total_assists - a.total_assists || b.total_points - a.total_points
@@ -40,7 +53,6 @@ export function LeaderboardPage() {
       default:        return b.total_points  - a.total_points
     }
   })
-
   const { data: selectedHistory, loading: histLoading, refetch: refetchStats } = useMyStats(selectedPlayer?.player_id)
   const { data: customTotals } = usePlayerCustomTotals(selectedPlayer?.player_id)
   const ctTotal = customTotals.find((c) => c.label === 'Continuous Training')?.total ?? 0
@@ -158,6 +170,21 @@ export function LeaderboardPage() {
         ))}
       </div>
 
+      {/* Season / Last session filter */}
+      <div className="flex bg-card rounded-2xl p-1 mx-4 mb-4 gap-1">
+        {(['last', 'all'] as PanelFilter[]).map((f) => (
+          <button
+            key={f}
+            onClick={() => { setPanelFilter(f); setPanelSession(null) }}
+            className={`flex-1 py-1.5 rounded-xl text-xs font-medium transition-all ${
+              panelFilter === f ? 'bg-accent text-bg' : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            {f === 'all' ? t('allSessions') : t('lastPractice')}
+          </button>
+        ))}
+      </div>
+
       {/* Selected player stats panel */}
       {selectedPlayer && (
         <div className="mx-4 mb-4 bg-card rounded-2xl p-4">
@@ -178,21 +205,6 @@ export function LeaderboardPage() {
             >
               ✕
             </button>
-          </div>
-
-          {/* Filter tabs */}
-          <div className="flex bg-bg rounded-2xl p-1 gap-1 mb-3">
-            {(['all', 'last'] as PanelFilter[]).map((f) => (
-              <button
-                key={f}
-                onClick={() => { setPanelFilter(f); setPanelSession(null) }}
-                className={`flex-1 py-1.5 rounded-xl text-xs font-medium transition-all ${
-                  panelFilter === f ? 'bg-accent text-bg' : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                {f === 'all' ? t('allSessions') : t('lastPractice')}
-              </button>
-            ))}
           </div>
 
           {/* Label + pills */}
@@ -275,6 +287,10 @@ export function LeaderboardPage() {
                 isSelected={selectedPlayer?.player_id === p.player_id}
                 sortBy={sortBy}
                 onClick={() => togglePlayer(p)}
+                sessionStats={panelFilter === 'last' ? (() => {
+                  const ls = lastSessionMap[p.player_id]
+                  return ls ? { goals: ls.goals, assists: ls.assists, wins: ls.team_won, points: ls.session_pts } : { goals: 0, assists: 0, wins: 0, points: 0 }
+                })() : undefined}
               />
             ))}
       </div>
