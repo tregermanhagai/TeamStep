@@ -166,8 +166,8 @@ export function ProfilePage() {
               className="flex items-center justify-between px-4 py-3 hover:bg-slate-700/30 transition-colors"
             >
               <div>
-                <p className="text-sm text-white font-medium">Manage Players</p>
-                <p className="text-xs text-slate-400">View and delete players</p>
+                <p className="text-sm text-white font-medium">ניהול שחקנים</p>
+                <p className="text-xs text-slate-400">הוסף, מחק ומזג שחקנים</p>
               </div>
               <span className="text-slate-500 text-lg">›</span>
             </Link>
