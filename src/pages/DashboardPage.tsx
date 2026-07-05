@@ -217,7 +217,7 @@ export function DashboardPage() {
             { label: 'שער',   value: reportGoals,   set: setReportGoals   },
             { label: 'בישול', value: reportAssists,  set: setReportAssists },
             { label: "נצ'",   value: reportWon,      set: setReportWon     },
-            { label: 'ספיגה', value: reportCS,       set: setReportCS      },
+            { label: 'ללא ספיגה', value: reportCS,   set: setReportCS      },
           ] as const).map(({ label, value, set }) => (
             <div key={label} className="flex flex-col items-center gap-1">
               <p className="text-xs text-slate-400">{label}</p>
