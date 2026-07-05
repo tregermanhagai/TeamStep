@@ -133,7 +133,7 @@ export function ProfilePage() {
         </div>
         <div className="px-4 py-3">
           <p className="text-xs text-slate-400">{t('role')}</p>
-          <p className="text-white font-semibold capitalize">{player.role}</p>
+          <p className="text-white font-semibold">{{ player: 'שחקן', admin: 'מנהל' }[player.role] ?? player.role}</p>
         </div>
       </div>
 
