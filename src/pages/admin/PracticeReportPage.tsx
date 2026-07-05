@@ -8,17 +8,17 @@ import { Player } from '../../types'
 type TeamColor = 'Pink' | 'Blue' | 'Yellow' | 'Other'
 const COLORS: TeamColor[] = ['Pink', 'Blue', 'Yellow', 'Other']
 
+type TeamStat = { wins: number; cs: number }
+
 type PlayerStats = {
   attended: boolean
   goals: number
   assists: number
-  teamWon: number
-  cleanSheet: number
   color: TeamColor
 }
 
 function defaultStats(): PlayerStats {
-  return { attended: false, goals: 0, assists: 0, teamWon: 0, cleanSheet: 0, color: 'Other' }
+  return { attended: false, goals: 0, assists: 0, color: 'Other' }
 }
 
 function todayStr() {
@@ -52,6 +52,10 @@ export function PracticeReportPage() {
   const [date, setDate] = useState(todayStr())
   const [players, setPlayers] = useState<Player[]>([])
   const [stats, setStats] = useState<Record<string, PlayerStats>>({})
+  const [teamStats, setTeamStats] = useState<Record<TeamColor, TeamStat>>({
+    Pink: { wins: 0, cs: 0 }, Blue: { wins: 0, cs: 0 },
+    Yellow: { wins: 0, cs: 0 }, Other: { wins: 0, cs: 0 },
+  })
   const [saving, setSaving] = useState(false)
   const [savedCount, setSavedCount] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -110,18 +114,24 @@ export function PracticeReportPage() {
       const updated: Record<string, PlayerStats> = {}
       Object.keys(s).forEach(id => { updated[id] = defaultStats() })
       if (reports) {
+        const inferred: Record<TeamColor, TeamStat> = {
+          Pink: { wins: 0, cs: 0 }, Blue: { wins: 0, cs: 0 },
+          Yellow: { wins: 0, cs: 0 }, Other: { wins: 0, cs: 0 },
+        }
         reports.forEach(r => {
           if (updated[r.player_id] !== undefined) {
             updated[r.player_id] = {
               attended: true,
               goals: r.goals ?? 0,
               assists: r.assists ?? 0,
-              teamWon: r.team_won ?? 0,
-              cleanSheet: r.clean_sheet ?? 0,
               color: (r.team_color as TeamColor) ?? 'Other',
             }
           }
+          const c = (r.team_color as TeamColor) ?? 'Other'
+          inferred[c].wins = Math.max(inferred[c].wins, r.team_won ?? 0)
+          inferred[c].cs   = Math.max(inferred[c].cs,   r.clean_sheet ?? 0)
         })
+        setTeamStats(inferred)
       }
       return updated
     })
@@ -154,8 +164,8 @@ export function PracticeReportPage() {
         p_match_date:  date,
         p_goals:       s.goals,
         p_assists:     s.assists,
-        p_team_won:    s.teamWon,
-        p_clean_sheet: s.cleanSheet,
+        p_team_won:    teamStats[s.color].wins,
+        p_clean_sheet: teamStats[s.color].cs,
         p_team_color:  s.color,
       })
       if (err) { failed++; console.error('[admin_upsert_report]', err) }
@@ -198,6 +208,67 @@ export function PracticeReportPage() {
         </p>
       </div>
 
+      {/* Team Stats section — shown once at least one player is attending */}
+      {(() => {
+        const activeColors = COLORS.filter(c =>
+          players.some(p => stats[p.player_id]?.attended && stats[p.player_id]?.color === c)
+        )
+        if (activeColors.length === 0) return null
+        const borderColor: Record<TeamColor, string> = {
+          Yellow: 'border-yellow-500/50', Pink: 'border-pink-500/50',
+          Blue: 'border-blue-400/50', Other: 'border-slate-600',
+        }
+        const textColor: Record<TeamColor, string> = {
+          Yellow: 'text-yellow-400', Pink: 'text-pink-400',
+          Blue: 'text-blue-400', Other: 'text-slate-400',
+        }
+        const COLOR_LABELS: Record<TeamColor, string> = {
+          Pink: 'ורוד', Blue: 'כחול', Yellow: 'צהוב', Other: 'אחר',
+        }
+        return (
+          <div className="px-4 mb-5 flex flex-col gap-3">
+            <p className="text-xs text-accent font-semibold uppercase tracking-wider">ניקוד קבוצתי</p>
+            {activeColors.map(color => {
+              const teamPlayers = players.filter(p =>
+                stats[p.player_id]?.attended && stats[p.player_id]?.color === color
+              )
+              const ts = teamStats[color]
+              return (
+                <div key={color} className={`bg-card rounded-2xl border p-4 ${borderColor[color]}`}>
+                  <p className={`text-sm font-semibold mb-1 ${textColor[color]}`}>
+                    {COLOR_LABELS[color]} ({teamPlayers.length})
+                  </p>
+                  <p className="text-xs text-slate-500 mb-3 truncate">
+                    {teamPlayers.map(p => p.full_name).join(' · ')}
+                  </p>
+                  <div className="flex gap-8">
+                    {([
+                      { label: 'ניצחון', key: 'wins' as const },
+                      { label: 'ספיגה',  key: 'cs'   as const },
+                    ]).map(({ label, key }) => (
+                      <div key={key} className="flex flex-col items-center gap-1">
+                        <p className="text-xs text-slate-400">{label}</p>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => setTeamStats(s => ({ ...s, [color]: { ...s[color], [key]: Math.max(0, s[color][key] - 1) } }))}
+                            className="w-7 h-7 rounded-full bg-slate-700 text-white flex items-center justify-center active:scale-95"
+                          >−</button>
+                          <span className="text-white font-bold w-5 text-center">{ts[key]}</span>
+                          <button
+                            onClick={() => setTeamStats(s => ({ ...s, [color]: { ...s[color], [key]: Math.min(9, s[color][key] + 1) } }))}
+                            className="w-7 h-7 rounded-full bg-slate-700 text-white flex items-center justify-center active:scale-95"
+                          >+</button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )
+      })()}
+
       {/* Player list */}
       <div className="px-4 flex flex-col gap-3">
         {players.map(player => {
@@ -224,11 +295,9 @@ export function PracticeReportPage() {
               {/* Stat inputs — only when attended */}
               {s.attended && (
                 <div className="px-4 pb-4 border-t border-slate-700/40 pt-3 flex flex-col gap-4">
-                  <div className="grid grid-cols-4 gap-2">
-                    <Counter label="Goals"   value={s.goals}      onChange={v => setStat(player.player_id, 'goals', v)} />
-                    <Counter label="Assists"  value={s.assists}    onChange={v => setStat(player.player_id, 'assists', v)} />
-                    <Counter label="Wins"     value={s.teamWon}    onChange={v => setStat(player.player_id, 'teamWon', v)} />
-                    <Counter label="CS"       value={s.cleanSheet} onChange={v => setStat(player.player_id, 'cleanSheet', v)} />
+                  <div className="grid grid-cols-2 gap-2">
+                    <Counter label="Goals"   value={s.goals}   onChange={v => setStat(player.player_id, 'goals', v)} />
+                    <Counter label="Assists" value={s.assists} onChange={v => setStat(player.player_id, 'assists', v)} />
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <p className="text-xs text-slate-400">Team:</p>
