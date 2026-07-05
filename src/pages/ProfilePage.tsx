@@ -145,8 +145,18 @@ export function ProfilePage() {
               className="flex items-center justify-between px-4 py-3 hover:bg-slate-700/30 rounded-t-2xl transition-colors"
             >
               <div>
-                <p className="text-sm text-white font-medium">Practice Report</p>
-                <p className="text-xs text-slate-400">Report stats for attending players</p>
+                <p className="text-sm text-white font-medium">דוח אימון</p>
+                <p className="text-xs text-slate-400">סמן נוכחות וניקוד אישי לשחקנים</p>
+              </div>
+              <span className="text-slate-500 text-lg">›</span>
+            </Link>
+            <Link
+              to="/admin/team-scoring"
+              className="flex items-center justify-between px-4 py-3 hover:bg-slate-700/30 transition-colors"
+            >
+              <div>
+                <p className="text-sm text-white font-medium">ניקוד קבוצתי</p>
+                <p className="text-xs text-slate-400">ניצחונות וללא ספיגה לפי צבע קבוצה</p>
               </div>
               <span className="text-slate-500 text-lg">›</span>
             </Link>

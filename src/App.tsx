@@ -10,6 +10,7 @@ import { ReportPage } from './pages/ReportPage'
 import { ProfilePage } from './pages/ProfilePage'
 import { ScoringPage } from './pages/admin/ScoringPage'
 import { PracticeReportPage } from './pages/admin/PracticeReportPage'
+import { TeamScoringPage } from './pages/admin/TeamScoringPage'
 import { PlayersPage } from './pages/admin/PlayersPage'
 import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage'
 import { BottomNav } from './components/BottomNav'
@@ -73,6 +74,10 @@ export default function App() {
         <Route
           path="/admin/practice"
           element={<AuthGuard><PracticeReportPage /></AuthGuard>}
+        />
+        <Route
+          path="/admin/team-scoring"
+          element={<AuthGuard><TeamScoringPage /></AuthGuard>}
         />
         <Route
           path="/admin/players"

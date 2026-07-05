@@ -7,8 +7,7 @@ import { Player } from '../../types'
 
 type TeamColor = 'Pink' | 'Blue' | 'Yellow' | 'Other'
 const COLORS: TeamColor[] = ['Pink', 'Blue', 'Yellow', 'Other']
-
-type TeamStat = { wins: number; cs: number }
+const COLOR_LABELS: Record<TeamColor, string> = { Pink: 'ורוד', Blue: 'כחול', Yellow: 'צהוב', Other: 'אחר' }
 
 type PlayerStats = {
   attended: boolean
@@ -47,15 +46,11 @@ function Counter({
 }
 
 export function PracticeReportPage() {
-  const { isAdmin, player: adminPlayer, loading: sessionLoading } = useSession()
+  const { isAdmin, loading: sessionLoading } = useSession()
   const navigate = useNavigate()
   const [date, setDate] = useState(todayStr())
   const [players, setPlayers] = useState<Player[]>([])
   const [stats, setStats] = useState<Record<string, PlayerStats>>({})
-  const [teamStats, setTeamStats] = useState<Record<TeamColor, TeamStat>>({
-    Pink: { wins: 0, cs: 0 }, Blue: { wins: 0, cs: 0 },
-    Yellow: { wins: 0, cs: 0 }, Other: { wins: 0, cs: 0 },
-  })
   const [saving, setSaving] = useState(false)
   const [savedCount, setSavedCount] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -87,17 +82,13 @@ export function PracticeReportPage() {
   }
 
   async function loadExistingReports(matchDate: string) {
-    const teamId = adminPlayer?.team_id ?? 'aaaaaaaa-0000-0000-0000-000000000001'
-
     const { data: match } = await supabase
       .from('matches')
       .select('match_id')
-      .eq('team_id', teamId)
       .eq('match_date', matchDate)
       .maybeSingle()
 
     if (!match) {
-      // No session yet — reset all to not-attended
       setStats(s => {
         const reset: Record<string, PlayerStats> = {}
         Object.keys(s).forEach(id => { reset[id] = defaultStats() })
@@ -115,24 +106,16 @@ export function PracticeReportPage() {
       const updated: Record<string, PlayerStats> = {}
       Object.keys(s).forEach(id => { updated[id] = defaultStats() })
       if (reports) {
-        const inferred: Record<TeamColor, TeamStat> = {
-          Pink: { wins: 0, cs: 0 }, Blue: { wins: 0, cs: 0 },
-          Yellow: { wins: 0, cs: 0 }, Other: { wins: 0, cs: 0 },
-        }
         reports.forEach(r => {
           if (updated[r.player_id] !== undefined) {
             updated[r.player_id] = {
               attended: true,
-              goals: r.goals ?? 0,
-              assists: r.assists ?? 0,
-              color: (r.team_color as TeamColor) ?? 'Other',
+              goals:    r.goals ?? 0,
+              assists:  r.assists ?? 0,
+              color:    (r.team_color as TeamColor) ?? 'Other',
             }
           }
-          const c = (r.team_color as TeamColor) ?? 'Other'
-          inferred[c].wins = Math.max(inferred[c].wins, r.team_won ?? 0)
-          inferred[c].cs   = Math.max(inferred[c].cs,   r.clean_sheet ?? 0)
         })
-        setTeamStats(inferred)
       }
       return updated
     })
@@ -160,20 +143,18 @@ export function PracticeReportPage() {
     let failed = 0
     for (const p of attending) {
       const s = stats[p.player_id]
-      const { error: err } = await supabase.rpc('admin_upsert_report', {
-        p_player_id:   p.player_id,
-        p_match_date:  date,
-        p_goals:       s.goals,
-        p_assists:     s.assists,
-        p_team_won:    teamStats[s.color].wins,
-        p_clean_sheet: teamStats[s.color].cs,
-        p_team_color:  s.color,
+      const { error: err } = await supabase.rpc('admin_save_attendance', {
+        p_player_id:  p.player_id,
+        p_match_date: date,
+        p_goals:      s.goals,
+        p_assists:    s.assists,
+        p_color:      s.color,
       })
-      if (err) { failed++; console.error('[admin_upsert_report]', err) }
+      if (err) { failed++; console.error('[admin_save_attendance]', err) }
     }
     setSaving(false)
     if (failed > 0) setError(`${failed} report(s) failed. Check console.`)
-    else navigate('/leaderboard')
+    else navigate('/admin/team-scoring')
   }
 
   const attendingCount = Object.values(stats).filter(s => s.attended).length
@@ -190,7 +171,7 @@ export function PracticeReportPage() {
       <div className="px-4 pt-12 pb-4 flex items-center justify-between">
         <div>
           <p className="text-xs text-accent font-semibold uppercase tracking-wider">Admin</p>
-          <h1 className="text-xl font-bold text-white">Practice Report</h1>
+          <h1 className="text-xl font-bold text-white">דוח אימון</h1>
         </div>
         <button onClick={() => navigate('/profile')} className="text-slate-400 text-2xl leading-none">✕</button>
       </div>
@@ -218,7 +199,6 @@ export function PracticeReportPage() {
           if (!s) return null
           return (
             <div key={player.player_id} className="bg-card rounded-2xl overflow-hidden">
-              {/* Player row — tap to toggle attendance */}
               <button
                 onClick={() => toggle(player.player_id)}
                 className="w-full flex items-center justify-between px-4 py-3 active:bg-slate-700/30 transition-colors"
@@ -234,12 +214,11 @@ export function PracticeReportPage() {
                 </div>
               </button>
 
-              {/* Stat inputs — only when attended */}
               {s.attended && (
                 <div className="px-4 pb-4 border-t border-slate-700/40 pt-3 flex flex-col gap-4">
                   <div className="grid grid-cols-2 gap-2">
-                    <Counter label="Goals"   value={s.goals}   onChange={v => setStat(player.player_id, 'goals', v)} />
-                    <Counter label="Assists" value={s.assists} onChange={v => setStat(player.player_id, 'assists', v)} />
+                    <Counter label="שערים" value={s.goals}   onChange={v => setStat(player.player_id, 'goals', v)} />
+                    <Counter label="בישולים" value={s.assists} onChange={v => setStat(player.player_id, 'assists', v)} />
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <p className="text-xs text-slate-400">:קבוצה</p>
@@ -251,7 +230,7 @@ export function PracticeReportPage() {
                           s.color === c ? 'bg-accent text-bg' : 'bg-slate-700 text-slate-300'
                         }`}
                       >
-                        {{ Pink: 'ורוד', Blue: 'כחול', Yellow: 'צהוב', Other: 'אחר' }[c]}
+                        {COLOR_LABELS[c]}
                       </button>
                     ))}
                   </div>
@@ -262,69 +241,12 @@ export function PracticeReportPage() {
         })}
       </div>
 
-      {/* Team Stats section — always visible with all 4 color cards */}
-      {(() => {
-        const borderColor: Record<TeamColor, string> = {
-          Yellow: 'border-yellow-500/50', Pink: 'border-pink-500/50',
-          Blue: 'border-blue-400/50', Other: 'border-slate-600',
-        }
-        const textColor: Record<TeamColor, string> = {
-          Yellow: 'text-yellow-400', Pink: 'text-pink-400',
-          Blue: 'text-blue-400', Other: 'text-slate-400',
-        }
-        const COLOR_LABELS: Record<TeamColor, string> = {
-          Pink: 'ורוד', Blue: 'כחול', Yellow: 'צהוב', Other: 'אחר',
-        }
-        return (
-          <div className="px-4 mt-5 flex flex-col gap-3">
-            <p className="text-xs text-accent font-semibold uppercase tracking-wider">ניקוד קבוצתי</p>
-            {COLORS.map(color => {
-              const teamPlayers = players.filter(p =>
-                stats[p.player_id]?.attended && stats[p.player_id]?.color === color
-              )
-              const ts = teamStats[color]
-              return (
-                <div key={color} className={`bg-card rounded-2xl border p-4 ${borderColor[color]}`}>
-                  <p className={`text-sm font-semibold mb-1 ${textColor[color]}`}>
-                    {COLOR_LABELS[color]} ({teamPlayers.length})
-                  </p>
-                  <p className="text-xs text-slate-500 mb-3 truncate min-h-[1rem]">
-                    {teamPlayers.length > 0 ? teamPlayers.map(p => p.full_name).join(' · ') : '—'}
-                  </p>
-                  <div className="flex gap-8">
-                    {([
-                      { label: 'ניצחון', key: 'wins' as const },
-                      { label: 'ספיגה',  key: 'cs'   as const },
-                    ]).map(({ label, key }) => (
-                      <div key={key} className="flex flex-col items-center gap-1">
-                        <p className="text-xs text-slate-400">{label}</p>
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => setTeamStats(s => ({ ...s, [color]: { ...s[color], [key]: Math.max(0, s[color][key] - 1) } }))}
-                            className="w-7 h-7 rounded-full bg-slate-700 text-white flex items-center justify-center active:scale-95"
-                          >−</button>
-                          <span className="text-white font-bold w-5 text-center">{ts[key]}</span>
-                          <button
-                            onClick={() => setTeamStats(s => ({ ...s, [color]: { ...s[color], [key]: Math.min(9, s[color][key] + 1) } }))}
-                            className="w-7 h-7 rounded-full bg-slate-700 text-white flex items-center justify-center active:scale-95"
-                          >+</button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        )
-      })()}
-
-      {/* Footer save bar */}
+      {/* Footer */}
       <div className="fixed bottom-0 left-0 right-0 px-4 pb-6 pt-3 bg-bg border-t border-slate-800">
         {error && <p className="text-red-400 text-xs mb-2 text-center">{error}</p>}
         {savedCount !== null && (
           <p className="text-green-400 text-xs mb-2 text-center">
-            Saved reports for {savedCount} player{savedCount !== 1 ? 's' : ''}
+            Saved {savedCount} player{savedCount !== 1 ? 's' : ''}
           </p>
         )}
         <button
@@ -332,7 +254,7 @@ export function PracticeReportPage() {
           disabled={saving || attendingCount === 0}
           className="w-full bg-accent text-bg font-bold py-4 rounded-2xl active:scale-95 transition-all disabled:opacity-50"
         >
-          {saving ? 'Saving…' : `Save Reports (${attendingCount} player${attendingCount !== 1 ? 's' : ''})`}
+          {saving ? 'שומר…' : `המשך לניקוד קבוצתי (${attendingCount} שחקנים)`}
         </button>
       </div>
     </div>
