@@ -26,7 +26,7 @@ export function TeamScoringPage() {
   const { isAdmin, loading: sessionLoading } = useSession()
   const navigate = useNavigate()
   const [date, setDate] = useState(todayStr())
-  const [teamPlayers, setTeamPlayers] = useState<TeamPlayers>({ Pink: [], Blue: [], Yellow: [], Other: [] })
+  const [teamPlayers, setTeamPlayers] = useState<TeamPlayers>({ Pink: [], Blue: [], Yellow: [], Green: [], Red: [], Other: [] })
   const [teamStats, setTeamStats] = useState<Record<TeamColor, TeamStat>>({
     Pink: { wins: 0, cs: 0 }, Blue: { wins: 0, cs: 0 },
     Yellow: { wins: 0, cs: 0 }, Green: { wins: 0, cs: 0 },
@@ -48,7 +48,7 @@ export function TeamScoringPage() {
       .eq('match_date', matchDate)
       .maybeSingle()
 
-    const grouped: TeamPlayers = { Pink: [], Blue: [], Yellow: [], Other: [] }
+    const grouped: TeamPlayers = { Pink: [], Blue: [], Yellow: [], Green: [], Red: [], Other: [] }
     const inferred: Record<TeamColor, TeamStat> = {
       Pink: { wins: 0, cs: 0 }, Blue: { wins: 0, cs: 0 },
       Yellow: { wins: 0, cs: 0 }, Green: { wins: 0, cs: 0 },
