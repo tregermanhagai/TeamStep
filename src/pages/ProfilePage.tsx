@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useSession } from '../hooks/useSession'
 import { useLocale } from '../contexts/LocaleContext'
 import { useMyStats } from '../hooks/useMyStats'
@@ -12,6 +12,7 @@ import { AdminRoleManager } from '../components/AdminRoleManager'
 
 export function ProfilePage() {
   const { t, locale, setLocale } = useLocale()
+  const navigate = useNavigate()
   const { player, session, isAdmin, loading, refetchPlayer } = useSession()
   const [editingName, setEditingName] = useState(false)
   const [nameInput, setNameInput] = useState('')
@@ -35,7 +36,7 @@ export function ProfilePage() {
     const { error } = await supabase.rpc('admin_reset_scores', { p_team_id: player.team_id })
     setResetting(false)
     if (error) alert('Reset failed: ' + error.message)
-    else alert('All scores have been reset to zero.')
+    else navigate('/leaderboard')
   }
 
   async function saveName() {
