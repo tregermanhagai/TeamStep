@@ -261,11 +261,8 @@ export function PracticeReportPage() {
         })}
       </div>
 
-      {/* Team Stats section — always visible */}
+      {/* Team Stats section — always visible with all 4 color cards */}
       {(() => {
-        const activeColors = COLORS.filter(c =>
-          players.some(p => stats[p.player_id]?.attended && stats[p.player_id]?.color === c)
-        )
         const borderColor: Record<TeamColor, string> = {
           Yellow: 'border-yellow-500/50', Pink: 'border-pink-500/50',
           Blue: 'border-blue-400/50', Other: 'border-slate-600',
@@ -280,9 +277,7 @@ export function PracticeReportPage() {
         return (
           <div className="px-4 mt-5 flex flex-col gap-3">
             <p className="text-xs text-accent font-semibold uppercase tracking-wider">ניקוד קבוצתי</p>
-            {activeColors.length === 0 ? (
-              <p className="text-xs text-slate-500 text-center py-4">סמן שחקנים כנוכחים למעלה כדי להגדיר ניקוד קבוצתי</p>
-            ) : activeColors.map(color => {
+            {COLORS.map(color => {
               const teamPlayers = players.filter(p =>
                 stats[p.player_id]?.attended && stats[p.player_id]?.color === color
               )
@@ -292,8 +287,8 @@ export function PracticeReportPage() {
                   <p className={`text-sm font-semibold mb-1 ${textColor[color]}`}>
                     {COLOR_LABELS[color]} ({teamPlayers.length})
                   </p>
-                  <p className="text-xs text-slate-500 mb-3 truncate">
-                    {teamPlayers.map(p => p.full_name).join(' · ')}
+                  <p className="text-xs text-slate-500 mb-3 truncate min-h-[1rem]">
+                    {teamPlayers.length > 0 ? teamPlayers.map(p => p.full_name).join(' · ') : '—'}
                   </p>
                   <div className="flex gap-8">
                     {([
