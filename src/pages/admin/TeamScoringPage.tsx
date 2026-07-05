@@ -3,16 +3,18 @@ import { Navigate, useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useSession } from '../../hooks/useSession'
 
-type TeamColor = 'Pink' | 'Blue' | 'Yellow' | 'Other'
-const COLORS: TeamColor[] = ['Pink', 'Blue', 'Yellow', 'Other']
-const COLOR_LABELS: Record<TeamColor, string> = { Pink: 'ורוד', Blue: 'כחול', Yellow: 'צהוב', Other: 'אחר' }
+type TeamColor = 'Pink' | 'Blue' | 'Yellow' | 'Green' | 'Red' | 'Other'
+const COLORS: TeamColor[] = ['Pink', 'Blue', 'Yellow', 'Green', 'Red', 'Other']
+const COLOR_LABELS: Record<TeamColor, string> = { Pink: 'ורוד', Blue: 'כחול', Yellow: 'צהוב', Green: 'ירוק', Red: 'אדום', Other: 'אחר' }
 const BORDER_COLOR: Record<TeamColor, string> = {
   Yellow: 'border-yellow-500/50', Pink: 'border-pink-500/50',
-  Blue: 'border-blue-400/50', Other: 'border-slate-600',
+  Blue: 'border-blue-400/50', Green: 'border-green-500/50',
+  Red: 'border-red-500/50', Other: 'border-slate-600',
 }
 const TEXT_COLOR: Record<TeamColor, string> = {
   Yellow: 'text-yellow-400', Pink: 'text-pink-400',
-  Blue: 'text-blue-400', Other: 'text-slate-400',
+  Blue: 'text-blue-400', Green: 'text-green-400',
+  Red: 'text-red-400', Other: 'text-slate-400',
 }
 
 type TeamStat = { wins: number; cs: number }
@@ -27,7 +29,8 @@ export function TeamScoringPage() {
   const [teamPlayers, setTeamPlayers] = useState<TeamPlayers>({ Pink: [], Blue: [], Yellow: [], Other: [] })
   const [teamStats, setTeamStats] = useState<Record<TeamColor, TeamStat>>({
     Pink: { wins: 0, cs: 0 }, Blue: { wins: 0, cs: 0 },
-    Yellow: { wins: 0, cs: 0 }, Other: { wins: 0, cs: 0 },
+    Yellow: { wins: 0, cs: 0 }, Green: { wins: 0, cs: 0 },
+    Red: { wins: 0, cs: 0 }, Other: { wins: 0, cs: 0 },
   })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -48,7 +51,8 @@ export function TeamScoringPage() {
     const grouped: TeamPlayers = { Pink: [], Blue: [], Yellow: [], Other: [] }
     const inferred: Record<TeamColor, TeamStat> = {
       Pink: { wins: 0, cs: 0 }, Blue: { wins: 0, cs: 0 },
-      Yellow: { wins: 0, cs: 0 }, Other: { wins: 0, cs: 0 },
+      Yellow: { wins: 0, cs: 0 }, Green: { wins: 0, cs: 0 },
+      Red: { wins: 0, cs: 0 }, Other: { wins: 0, cs: 0 },
     }
 
     if (match) {

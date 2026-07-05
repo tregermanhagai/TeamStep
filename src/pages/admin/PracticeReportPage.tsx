@@ -5,9 +5,9 @@ import { useSession } from '../../hooks/useSession'
 import { Avatar } from '../../components/Avatar'
 import { Player } from '../../types'
 
-type TeamColor = 'Pink' | 'Blue' | 'Yellow' | 'Other'
-const COLORS: TeamColor[] = ['Pink', 'Blue', 'Yellow', 'Other']
-const COLOR_LABELS: Record<TeamColor, string> = { Pink: 'ורוד', Blue: 'כחול', Yellow: 'צהוב', Other: 'אחר' }
+type TeamColor = 'Pink' | 'Blue' | 'Yellow' | 'Green' | 'Red' | 'Other'
+const COLORS: TeamColor[] = ['Pink', 'Blue', 'Yellow', 'Green', 'Red', 'Other']
+const COLOR_LABELS: Record<TeamColor, string> = { Pink: 'ורוד', Blue: 'כחול', Yellow: 'צהוב', Green: 'ירוק', Red: 'אדום', Other: 'אחר' }
 
 type PlayerStats = {
   attended: boolean
@@ -17,7 +17,7 @@ type PlayerStats = {
 }
 
 function defaultStats(): PlayerStats {
-  return { attended: false, goals: 0, assists: 0, color: 'Other' }
+  return { attended: false, goals: 0, assists: 0, color: 'Other' as TeamColor }
 }
 
 function todayStr() {

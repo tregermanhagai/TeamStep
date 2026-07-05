@@ -14,9 +14,9 @@ import { AppFooter } from '../components/AppFooter'
 import { useLastSessionLeaderboard } from '../hooks/useLastSessionLeaderboard'
 
 type Filter = 'all' | 'last'
-type TeamColor = 'Pink' | 'Blue' | 'Yellow' | 'Other'
-const COLORS: TeamColor[] = ['Pink', 'Blue', 'Yellow', 'Other']
-const COLOR_LABELS: Record<TeamColor, string> = { Pink: 'ורוד', Blue: 'כחול', Yellow: 'צהוב', Other: 'אחר' }
+type TeamColor = 'Pink' | 'Blue' | 'Yellow' | 'Green' | 'Red' | 'Other'
+const COLORS: TeamColor[] = ['Pink', 'Blue', 'Yellow', 'Green', 'Red', 'Other']
+const COLOR_LABELS: Record<TeamColor, string> = { Pink: 'ורוד', Blue: 'כחול', Yellow: 'צהוב', Green: 'ירוק', Red: 'אדום', Other: 'אחר' }
 function todayStr() { return new Date().toISOString().split('T')[0] }
 
 export function DashboardPage() {

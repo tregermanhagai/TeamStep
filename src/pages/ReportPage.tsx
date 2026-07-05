@@ -6,8 +6,8 @@ import { useCustomCategories } from '../hooks/useCustomCategories'
 import { useLocale } from '../contexts/LocaleContext'
 import { AppFooter } from '../components/AppFooter'
 
-type TeamColor = 'Pink' | 'Blue' | 'Yellow' | 'Other'
-const COLORS: TeamColor[] = ['Pink', 'Blue', 'Yellow', 'Other']
+type TeamColor = 'Pink' | 'Blue' | 'Yellow' | 'Green' | 'Red' | 'Other'
+const COLORS: TeamColor[] = ['Pink', 'Blue', 'Yellow', 'Green', 'Red', 'Other']
 
 function todayStr() {
   return new Date().toISOString().split('T')[0]
@@ -230,7 +230,7 @@ export function ReportPage() {
                       teamColor === c ? 'bg-accent text-bg' : 'bg-card text-slate-400'
                     }`}
                   >
-                    {{ Pink: t('colorPink'), Blue: t('colorBlue'), Yellow: t('colorYellow'), Other: t('colorOther') }[c]}
+                    {{ Pink: t('colorPink'), Blue: t('colorBlue'), Yellow: t('colorYellow'), Green: t('colorGreen'), Red: t('colorRed'), Other: t('colorOther') }[c]}
                   </button>
                 ))}
               </div>

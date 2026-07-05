@@ -59,6 +59,8 @@ export const translations = {
     colorPink:            'Pink',
     colorBlue:            'Blue',
     colorYellow:          'Yellow',
+    colorGreen:           'Green',
+    colorRed:             'Red',
     colorOther:           'Other',
   },
   he: {
@@ -119,6 +121,8 @@ export const translations = {
     colorPink:            'ורוד',
     colorBlue:            'כחול',
     colorYellow:          'צהוב',
+    colorGreen:           'ירוק',
+    colorRed:             'אדום',
     colorOther:           'אחר',
   },
 } as const
