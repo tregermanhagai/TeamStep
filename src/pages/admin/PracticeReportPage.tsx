@@ -204,70 +204,11 @@ export function PracticeReportPage() {
           className="w-full bg-card text-white rounded-xl px-4 py-3 text-sm border border-slate-700 focus:outline-none focus:border-accent"
         />
         <p className="text-xs text-slate-500 mt-1 px-1">
-          {attendingCount} player{attendingCount !== 1 ? 's' : ''} marked as attending
+          {attendingCount === 0
+            ? 'הקש על שחקן כדי לסמן נוכחות'
+            : `${attendingCount} player${attendingCount !== 1 ? 's' : ''} marked as attending`}
         </p>
       </div>
-
-      {/* Team Stats section — shown once at least one player is attending */}
-      {(() => {
-        const activeColors = COLORS.filter(c =>
-          players.some(p => stats[p.player_id]?.attended && stats[p.player_id]?.color === c)
-        )
-        if (activeColors.length === 0) return null
-        const borderColor: Record<TeamColor, string> = {
-          Yellow: 'border-yellow-500/50', Pink: 'border-pink-500/50',
-          Blue: 'border-blue-400/50', Other: 'border-slate-600',
-        }
-        const textColor: Record<TeamColor, string> = {
-          Yellow: 'text-yellow-400', Pink: 'text-pink-400',
-          Blue: 'text-blue-400', Other: 'text-slate-400',
-        }
-        const COLOR_LABELS: Record<TeamColor, string> = {
-          Pink: 'ורוד', Blue: 'כחול', Yellow: 'צהוב', Other: 'אחר',
-        }
-        return (
-          <div className="px-4 mb-5 flex flex-col gap-3">
-            <p className="text-xs text-accent font-semibold uppercase tracking-wider">ניקוד קבוצתי</p>
-            {activeColors.map(color => {
-              const teamPlayers = players.filter(p =>
-                stats[p.player_id]?.attended && stats[p.player_id]?.color === color
-              )
-              const ts = teamStats[color]
-              return (
-                <div key={color} className={`bg-card rounded-2xl border p-4 ${borderColor[color]}`}>
-                  <p className={`text-sm font-semibold mb-1 ${textColor[color]}`}>
-                    {COLOR_LABELS[color]} ({teamPlayers.length})
-                  </p>
-                  <p className="text-xs text-slate-500 mb-3 truncate">
-                    {teamPlayers.map(p => p.full_name).join(' · ')}
-                  </p>
-                  <div className="flex gap-8">
-                    {([
-                      { label: 'ניצחון', key: 'wins' as const },
-                      { label: 'ספיגה',  key: 'cs'   as const },
-                    ]).map(({ label, key }) => (
-                      <div key={key} className="flex flex-col items-center gap-1">
-                        <p className="text-xs text-slate-400">{label}</p>
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => setTeamStats(s => ({ ...s, [color]: { ...s[color], [key]: Math.max(0, s[color][key] - 1) } }))}
-                            className="w-7 h-7 rounded-full bg-slate-700 text-white flex items-center justify-center active:scale-95"
-                          >−</button>
-                          <span className="text-white font-bold w-5 text-center">{ts[key]}</span>
-                          <button
-                            onClick={() => setTeamStats(s => ({ ...s, [color]: { ...s[color], [key]: Math.min(9, s[color][key] + 1) } }))}
-                            className="w-7 h-7 rounded-full bg-slate-700 text-white flex items-center justify-center active:scale-95"
-                          >+</button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        )
-      })()}
 
       {/* Player list */}
       <div className="px-4 flex flex-col gap-3">
@@ -319,6 +260,67 @@ export function PracticeReportPage() {
           )
         })}
       </div>
+
+      {/* Team Stats section — shown below players once at least one is attending */}
+      {(() => {
+        const activeColors = COLORS.filter(c =>
+          players.some(p => stats[p.player_id]?.attended && stats[p.player_id]?.color === c)
+        )
+        if (activeColors.length === 0) return null
+        const borderColor: Record<TeamColor, string> = {
+          Yellow: 'border-yellow-500/50', Pink: 'border-pink-500/50',
+          Blue: 'border-blue-400/50', Other: 'border-slate-600',
+        }
+        const textColor: Record<TeamColor, string> = {
+          Yellow: 'text-yellow-400', Pink: 'text-pink-400',
+          Blue: 'text-blue-400', Other: 'text-slate-400',
+        }
+        const COLOR_LABELS: Record<TeamColor, string> = {
+          Pink: 'ורוד', Blue: 'כחול', Yellow: 'צהוב', Other: 'אחר',
+        }
+        return (
+          <div className="px-4 mt-5 flex flex-col gap-3">
+            <p className="text-xs text-accent font-semibold uppercase tracking-wider">ניקוד קבוצתי</p>
+            {activeColors.map(color => {
+              const teamPlayers = players.filter(p =>
+                stats[p.player_id]?.attended && stats[p.player_id]?.color === color
+              )
+              const ts = teamStats[color]
+              return (
+                <div key={color} className={`bg-card rounded-2xl border p-4 ${borderColor[color]}`}>
+                  <p className={`text-sm font-semibold mb-1 ${textColor[color]}`}>
+                    {COLOR_LABELS[color]} ({teamPlayers.length})
+                  </p>
+                  <p className="text-xs text-slate-500 mb-3 truncate">
+                    {teamPlayers.map(p => p.full_name).join(' · ')}
+                  </p>
+                  <div className="flex gap-8">
+                    {([
+                      { label: 'ניצחון', key: 'wins' as const },
+                      { label: 'ספיגה',  key: 'cs'   as const },
+                    ]).map(({ label, key }) => (
+                      <div key={key} className="flex flex-col items-center gap-1">
+                        <p className="text-xs text-slate-400">{label}</p>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => setTeamStats(s => ({ ...s, [color]: { ...s[color], [key]: Math.max(0, s[color][key] - 1) } }))}
+                            className="w-7 h-7 rounded-full bg-slate-700 text-white flex items-center justify-center active:scale-95"
+                          >−</button>
+                          <span className="text-white font-bold w-5 text-center">{ts[key]}</span>
+                          <button
+                            onClick={() => setTeamStats(s => ({ ...s, [color]: { ...s[color], [key]: Math.min(9, s[color][key] + 1) } }))}
+                            className="w-7 h-7 rounded-full bg-slate-700 text-white flex items-center justify-center active:scale-95"
+                          >+</button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )
+      })()}
 
       {/* Footer save bar */}
       <div className="fixed bottom-0 left-0 right-0 px-4 pb-6 pt-3 bg-bg border-t border-slate-800">
