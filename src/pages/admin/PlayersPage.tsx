@@ -99,7 +99,7 @@ export function PlayersPage() {
     <div className="min-h-screen bg-bg pb-32">
       <div className="px-4 pt-12 pb-4 flex items-center justify-between">
         <div>
-          <p className="text-xs text-accent font-semibold uppercase tracking-wider">Admin</p>
+          <p className="text-xs text-accent font-semibold uppercase tracking-wider">מנהל</p>
           <h1 className="text-xl font-bold text-white">Manage Players</h1>
           <p className="text-slate-400 text-sm mt-0.5">{players.length} players total</p>
         </div>

@@ -52,7 +52,7 @@ export const translations = {
     sessionsPlayed:       'Sessions played',
     bestSession:          'Best session',
     role:                 'Role',
-    adminSection:         'Admin',
+    adminSection:         'מנהל',
     scoringRules:         'Scoring Rules',
     scoringRulesDesc:     'Edit multipliers & custom categories',
     manageAdmins:         'Manage Admins',

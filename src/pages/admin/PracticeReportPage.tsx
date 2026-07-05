@@ -170,7 +170,7 @@ export function PracticeReportPage() {
       {/* Header */}
       <div className="px-4 pt-12 pb-4 flex items-center justify-between">
         <div>
-          <p className="text-xs text-accent font-semibold uppercase tracking-wider">Admin</p>
+          <p className="text-xs text-accent font-semibold uppercase tracking-wider">מנהל</p>
           <h1 className="text-xl font-bold text-white">דוח אימון</h1>
         </div>
         <button onClick={() => navigate('/profile')} className="text-slate-400 text-2xl leading-none">✕</button>
@@ -206,6 +206,9 @@ export function PracticeReportPage() {
                 <div className="flex items-center gap-3">
                   <Avatar player={player} size={36} />
                   <span className="text-white font-medium text-sm">{player.full_name}</span>
+                  {player.role === 'admin' && (
+                    <span className="text-yellow-400 text-xs leading-none" title="מנהל">★</span>
+                  )}
                 </div>
                 <div className={`w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all flex-shrink-0 ${
                   s.attended ? 'bg-accent border-accent text-bg' : 'border-slate-600'

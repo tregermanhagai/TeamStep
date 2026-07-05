@@ -88,7 +88,7 @@ export function ScoringPage() {
   return (
     <div className="min-h-screen bg-bg pb-nav">
       <div className="px-4 pt-12 pb-4">
-        <p className="text-xs text-accent font-semibold uppercase tracking-wider">Admin</p>
+        <p className="text-xs text-accent font-semibold uppercase tracking-wider">מנהל</p>
         <h1 className="text-xl font-bold text-white mt-0.5">Scoring Rules</h1>
         <p className="text-slate-400 text-sm mt-0.5">Changes apply retroactively to all sessions</p>
       </div>
