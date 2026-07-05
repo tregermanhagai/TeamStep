@@ -11,7 +11,7 @@ export function AppFooter() {
           נגישות
         </a>
       </div>
-      <p className="text-xs text-slate-600">© 2026 All rights reserved: hagai.tregerman</p>
+      <p className="text-xs text-slate-600">© 2026 All rights reserved: <a href="https://hagaitregerman.onrender.com/" target="_blank" rel="noopener noreferrer" className="hover:text-slate-400 underline">hagai.tregerman</a></p>
     </footer>
   )
 }
