@@ -173,7 +173,7 @@ export function PracticeReportPage() {
     }
     setSaving(false)
     if (failed > 0) setError(`${failed} report(s) failed. Check console.`)
-    else setSavedCount(attending.length)
+    else navigate('/leaderboard')
   }
 
   const attendingCount = Object.values(stats).filter(s => s.attended).length
