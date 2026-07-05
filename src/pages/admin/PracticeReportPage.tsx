@@ -47,7 +47,7 @@ function Counter({
 }
 
 export function PracticeReportPage() {
-  const { isAdmin, player: adminPlayer } = useSession()
+  const { isAdmin, player: adminPlayer, loading: sessionLoading } = useSession()
   const navigate = useNavigate()
   const [date, setDate] = useState(todayStr())
   const [players, setPlayers] = useState<Player[]>([])
@@ -62,9 +62,10 @@ export function PracticeReportPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    if (sessionLoading) return
     if (!isAdmin) { navigate('/dashboard'); return }
     loadPlayers()
-  }, [isAdmin])
+  }, [isAdmin, sessionLoading])
 
   useEffect(() => {
     if (players.length > 0) loadExistingReports(date)
@@ -241,7 +242,7 @@ export function PracticeReportPage() {
                     <Counter label="Assists" value={s.assists} onChange={v => setStat(player.player_id, 'assists', v)} />
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
-                    <p className="text-xs text-slate-400">Team:</p>
+                    <p className="text-xs text-slate-400">:קבוצה</p>
                     {COLORS.map(c => (
                       <button
                         key={c}
@@ -250,7 +251,7 @@ export function PracticeReportPage() {
                           s.color === c ? 'bg-accent text-bg' : 'bg-slate-700 text-slate-300'
                         }`}
                       >
-                        {c}
+                        {{ Pink: 'ורוד', Blue: 'כחול', Yellow: 'צהוב', Other: 'אחר' }[c]}
                       </button>
                     ))}
                   </div>
