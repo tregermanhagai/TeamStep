@@ -261,12 +261,11 @@ export function PracticeReportPage() {
         })}
       </div>
 
-      {/* Team Stats section — shown below players once at least one is attending */}
+      {/* Team Stats section — always visible */}
       {(() => {
         const activeColors = COLORS.filter(c =>
           players.some(p => stats[p.player_id]?.attended && stats[p.player_id]?.color === c)
         )
-        if (activeColors.length === 0) return null
         const borderColor: Record<TeamColor, string> = {
           Yellow: 'border-yellow-500/50', Pink: 'border-pink-500/50',
           Blue: 'border-blue-400/50', Other: 'border-slate-600',
@@ -281,7 +280,9 @@ export function PracticeReportPage() {
         return (
           <div className="px-4 mt-5 flex flex-col gap-3">
             <p className="text-xs text-accent font-semibold uppercase tracking-wider">ניקוד קבוצתי</p>
-            {activeColors.map(color => {
+            {activeColors.length === 0 ? (
+              <p className="text-xs text-slate-500 text-center py-4">סמן שחקנים כנוכחים למעלה כדי להגדיר ניקוד קבוצתי</p>
+            ) : activeColors.map(color => {
               const teamPlayers = players.filter(p =>
                 stats[p.player_id]?.attended && stats[p.player_id]?.color === color
               )
