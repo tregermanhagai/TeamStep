@@ -199,7 +199,10 @@ export function PlayersPage() {
             }`}
           >
             <Avatar player={player} size={36} />
-            <div className="flex-1 min-w-0">
+            <div
+              className="flex-1 min-w-0 cursor-pointer"
+              onClick={() => navigate('/admin/practice', { state: { highlightPlayerId: player.player_id } })}
+            >
               <p className="text-white font-medium text-sm truncate">{player.full_name}</p>
               <p className="text-xs text-slate-500 capitalize">
                 {player.role}

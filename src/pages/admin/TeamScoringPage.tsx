@@ -18,7 +18,17 @@ const TEXT_COLOR: Record<TeamColor, string> = {
 }
 
 type TeamStat = { wins: number; cs: number }
-type TeamPlayers = Record<TeamColor, string[]>
+type PlayerEntry = { id: string; name: string }
+type TeamPlayerMap = Record<TeamColor, PlayerEntry[]>
+
+const emptyMap = (): TeamPlayerMap => ({
+  Pink: [], Blue: [], Yellow: [], Green: [], Red: [], Other: [],
+})
+const emptyStats = (): Record<TeamColor, TeamStat> => ({
+  Pink: { wins: 0, cs: 0 }, Blue: { wins: 0, cs: 0 },
+  Yellow: { wins: 0, cs: 0 }, Green: { wins: 0, cs: 0 },
+  Red: { wins: 0, cs: 0 }, Other: { wins: 0, cs: 0 },
+})
 
 function todayStr() { return new Date().toISOString().split('T')[0] }
 
@@ -26,15 +36,19 @@ export function TeamScoringPage() {
   const { isAdmin, loading: sessionLoading } = useSession()
   const navigate = useNavigate()
   const [date, setDate] = useState(todayStr())
-  const [teamPlayers, setTeamPlayers] = useState<TeamPlayers>({ Pink: [], Blue: [], Yellow: [], Green: [], Red: [], Other: [] })
-  const [teamStats, setTeamStats] = useState<Record<TeamColor, TeamStat>>({
-    Pink: { wins: 0, cs: 0 }, Blue: { wins: 0, cs: 0 },
-    Yellow: { wins: 0, cs: 0 }, Green: { wins: 0, cs: 0 },
-    Red: { wins: 0, cs: 0 }, Other: { wins: 0, cs: 0 },
-  })
+  const [teamPlayerMap, setTeamPlayerMap] = useState<TeamPlayerMap>(emptyMap())
+  const [teamStats, setTeamStats] = useState<Record<TeamColor, TeamStat>>(emptyStats())
+  const [allPlayers, setAllPlayers] = useState<{ player_id: string; full_name: string }[]>([])
+  const [expandedColor, setExpandedColor] = useState<TeamColor | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [addingToColor, setAddingToColor] = useState<TeamColor | null>(null)
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    supabase.from('players').select('player_id, full_name').eq('is_active', true).order('full_name')
+      .then(({ data }) => { if (data) setAllPlayers(data) })
+  }, [])
 
   useEffect(() => {
     if (!sessionLoading && isAdmin) loadReports(date)
@@ -48,12 +62,8 @@ export function TeamScoringPage() {
       .eq('match_date', matchDate)
       .maybeSingle()
 
-    const grouped: TeamPlayers = { Pink: [], Blue: [], Yellow: [], Green: [], Red: [], Other: [] }
-    const inferred: Record<TeamColor, TeamStat> = {
-      Pink: { wins: 0, cs: 0 }, Blue: { wins: 0, cs: 0 },
-      Yellow: { wins: 0, cs: 0 }, Green: { wins: 0, cs: 0 },
-      Red: { wins: 0, cs: 0 }, Other: { wins: 0, cs: 0 },
-    }
+    const grouped = emptyMap()
+    const inferred = emptyStats()
 
     if (match) {
       const { data: reports } = await supabase
@@ -64,17 +74,30 @@ export function TeamScoringPage() {
       if (reports) {
         reports.forEach((r: any) => {
           const color = (r.team_color as TeamColor) ?? 'Other'
-          const name = r.players?.full_name ?? '?'
-          grouped[color].push(name)
+          grouped[color].push({ id: r.player_id, name: r.players?.full_name ?? '?' })
           inferred[color].wins = Math.max(inferred[color].wins, r.team_won ?? 0)
           inferred[color].cs   = Math.max(inferred[color].cs,   r.clean_sheet ?? 0)
         })
       }
     }
 
-    setTeamPlayers(grouped)
+    setTeamPlayerMap(grouped)
     setTeamStats(inferred)
     setLoading(false)
+  }
+
+  async function addPlayerToTeam(playerId: string, color: TeamColor) {
+    setAddingToColor(color)
+    const { error: err } = await supabase.rpc('admin_save_attendance', {
+      p_player_id:  playerId,
+      p_match_date: date,
+      p_goals:      0,
+      p_assists:    0,
+      p_color:      color,
+    })
+    if (err) console.error('[addPlayerToTeam]', err)
+    setAddingToColor(null)
+    await loadReports(date)
   }
 
   async function saveAll() {
@@ -99,7 +122,10 @@ export function TeamScoringPage() {
   if (sessionLoading) return <div className="min-h-screen bg-bg" />
   if (!isAdmin) return <Navigate to="/dashboard" replace />
 
-  const hasAnyPlayers = COLORS.some(c => teamPlayers[c].length > 0)
+  const hasAnyPlayers = COLORS.some(c => teamPlayerMap[c].length > 0)
+
+  const assignedIds = new Set(COLORS.flatMap(c => teamPlayerMap[c].map(p => p.id)))
+  const unassignedPlayers = allPlayers.filter(p => !assignedIds.has(p.player_id))
 
   return (
     <div className="min-h-screen bg-bg pb-32">
@@ -136,20 +162,67 @@ export function TeamScoringPage() {
       ) : (
         <div className="px-4 flex flex-col gap-3">
           {COLORS.map(color => {
-            const names = teamPlayers[color]
+            const entries = teamPlayerMap[color]
             const ts = teamStats[color]
+            const isExpanded = expandedColor === color
+
             return (
-              <div key={color} className={`bg-card rounded-2xl border p-4 ${BORDER_COLOR[color]}`}>
-                <p className={`text-sm font-semibold mb-1 ${TEXT_COLOR[color]}`}>
-                  {COLOR_LABELS[color]} ({names.length})
-                </p>
-                <p className="text-xs text-slate-500 mb-3 truncate min-h-[1rem]">
-                  {names.length > 0 ? names.join(' · ') : '—'}
-                </p>
-                <div className="flex gap-8">
+              <div key={color} className={`bg-card rounded-2xl border ${BORDER_COLOR[color]}`}>
+                {/* Clickable header — always active */}
+                <button
+                  className="w-full flex items-center justify-between px-4 pt-4 pb-2 active:opacity-70"
+                  onClick={() => setExpandedColor(prev => prev === color ? null : color)}
+                >
+                  <p className={`text-sm font-semibold ${TEXT_COLOR[color]}`}>
+                    {COLOR_LABELS[color]} ({entries.length})
+                  </p>
+                  <span className="text-slate-500 text-xs">{isExpanded ? '▲' : '▼'}</span>
+                </button>
+
+                {/* Collapsed: show truncated player names */}
+                {!isExpanded && (
+                  <p className="text-xs text-slate-500 px-4 pb-3 truncate min-h-[1.25rem]">
+                    {entries.length > 0 ? entries.map(e => e.name).join(' · ') : '—'}
+                  </p>
+                )}
+
+                {/* Expanded: full player list + add dropdown */}
+                {isExpanded && (
+                  <div className="px-4 pb-3 border-t border-slate-700/40 pt-2">
+                    {entries.length === 0 && (
+                      <p className="text-xs text-slate-600 py-1">אין שחקנים בקבוצה זו</p>
+                    )}
+                    <div className="flex flex-col gap-0.5 mb-2">
+                      {entries.map(e => (
+                        <p key={e.id} className="text-xs text-slate-300 py-0.5">• {e.name}</p>
+                      ))}
+                    </div>
+                    {/* Add player dropdown */}
+                    <select
+                      value=""
+                      onChange={e => { if (e.target.value) addPlayerToTeam(e.target.value, color) }}
+                      disabled={addingToColor === color || unassignedPlayers.length === 0}
+                      className="w-full bg-bg text-white rounded-xl px-3 py-2 text-xs border border-slate-700 focus:outline-none focus:border-accent disabled:opacity-50"
+                    >
+                      <option value="">
+                        {unassignedPlayers.length === 0
+                          ? 'כל השחקנים כבר שויכו לקבוצה'
+                          : addingToColor === color
+                            ? 'מוסיף…'
+                            : '+ הוסף שחקן לקבוצה…'}
+                      </option>
+                      {unassignedPlayers.map(p => (
+                        <option key={p.player_id} value={p.player_id}>{p.full_name}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* Wins / CS counters — always visible */}
+                <div className="flex gap-8 px-4 pb-4">
                   {([
-                    { label: 'ניצחון', key: 'wins' as const },
-                    { label: 'ללא ספיגה', key: 'cs' as const },
+                    { label: 'ניצחון',    key: 'wins' as const },
+                    { label: 'ללא ספיגה', key: 'cs'   as const },
                   ]).map(({ label, key }) => (
                     <div key={key} className="flex flex-col items-center gap-1">
                       <p className="text-xs text-slate-400">{label}</p>

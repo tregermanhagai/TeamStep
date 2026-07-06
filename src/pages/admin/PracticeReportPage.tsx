@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect, useRef } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useSession } from '../../hooks/useSession'
 import { Avatar } from '../../components/Avatar'
@@ -48,6 +48,9 @@ function Counter({
 export function PracticeReportPage() {
   const { isAdmin, loading: sessionLoading } = useSession()
   const navigate = useNavigate()
+  const location = useLocation()
+  const highlightPlayerId = (location.state as { highlightPlayerId?: string } | null)?.highlightPlayerId
+  const playerRefs = useRef<Record<string, HTMLDivElement | null>>({})
   const [date, setDate] = useState(todayStr())
   const [players, setPlayers] = useState<Player[]>([])
   const [stats, setStats] = useState<Record<string, PlayerStats>>({})
@@ -117,8 +120,18 @@ export function PracticeReportPage() {
           }
         })
       }
+      // Ensure the highlighted player is marked as attending
+      if (highlightPlayerId && updated[highlightPlayerId] !== undefined) {
+        updated[highlightPlayerId] = { ...updated[highlightPlayerId], attended: true }
+      }
       return updated
     })
+
+    if (highlightPlayerId) {
+      setTimeout(() => {
+        playerRefs.current[highlightPlayerId]?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }, 150)
+    }
   }
 
   function toggle(playerId: string) {
@@ -198,7 +211,7 @@ export function PracticeReportPage() {
           const s = stats[player.player_id]
           if (!s) return null
           return (
-            <div key={player.player_id} className="bg-card rounded-2xl overflow-hidden">
+            <div key={player.player_id} ref={el => { playerRefs.current[player.player_id] = el }} className="bg-card rounded-2xl overflow-hidden">
               <button
                 onClick={() => toggle(player.player_id)}
                 className="w-full flex items-center justify-between px-4 py-3 active:bg-slate-700/30 transition-colors"
