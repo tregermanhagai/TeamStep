@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useSession } from '../hooks/useSession'
 import { useLeaderboard } from '../hooks/useLeaderboard'
@@ -29,6 +29,7 @@ export function LeaderboardPage() {
   const { data, loading } = useLeaderboard()
   const location = useLocation()
 
+  const panelRef = useRef<HTMLDivElement>(null)
   const [sortBy, setSortBy] = useState<SortBy>('points')
   const [selectedPlayer, setSelectedPlayer] = useState<PlayerScore | null>(null)
   const [panelFilter, setPanelFilter] = useState<PanelFilter>('last')
@@ -121,6 +122,13 @@ export function LeaderboardPage() {
     setPanelSession(null)
   }, [selectedPlayer?.player_id])
 
+  // Scroll panel into view when a player is selected
+  useEffect(() => {
+    if (selectedPlayer && panelRef.current) {
+      panelRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }, [selectedPlayer?.player_id])
+
   function togglePlayer(p: PlayerScore) {
     setSelectedPlayer((prev) => (prev?.player_id === p.player_id ? null : p))
   }
@@ -188,7 +196,7 @@ export function LeaderboardPage() {
 
       {/* Selected player stats panel */}
       {selectedPlayer && (
-        <div className="mx-4 mb-4 bg-card rounded-2xl p-4">
+        <div ref={panelRef} className="mx-4 mb-4 bg-card rounded-2xl p-4">
           {/* Player header */}
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
