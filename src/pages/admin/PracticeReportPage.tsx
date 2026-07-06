@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useSession } from '../../hooks/useSession'
+import { useLocale } from '../../contexts/LocaleContext'
+import { trainerLabel } from '../../lib/playerUtils'
 import { Avatar } from '../../components/Avatar'
 import { Player } from '../../types'
 
@@ -47,6 +49,7 @@ function Counter({
 
 export function PracticeReportPage() {
   const { isAdmin, loading: sessionLoading } = useSession()
+  const { locale } = useLocale()
   const navigate = useNavigate()
   const location = useLocation()
   const highlightPlayerId = (location.state as { highlightPlayerId?: string } | null)?.highlightPlayerId
@@ -238,7 +241,12 @@ export function PracticeReportPage() {
                 {/* Player info */}
                 <div className="flex items-center gap-3 flex-1 min-w-0">
                   <Avatar player={player} size={36} />
-                  <span className="text-white font-medium text-sm truncate">{player.full_name}</span>
+                  <span className="text-white font-medium text-sm truncate">
+                    {player.full_name}
+                    {trainerLabel(player.full_name, locale) && (
+                      <span className="ml-1 text-slate-400 text-xs font-normal">{trainerLabel(player.full_name, locale)}</span>
+                    )}
+                  </span>
                   {player.role === 'admin' && (
                     <span className="text-yellow-400 text-xs leading-none" title="מנהל">★</span>
                   )}

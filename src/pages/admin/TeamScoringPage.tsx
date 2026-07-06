@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useSession } from '../../hooks/useSession'
+import { useLocale } from '../../contexts/LocaleContext'
+import { trainerLabel } from '../../lib/playerUtils'
 
 type TeamColor = 'Pink' | 'Blue' | 'Yellow' | 'Green' | 'Red' | 'Other'
 const COLORS: TeamColor[] = ['Pink', 'Blue', 'Yellow', 'Green', 'Red', 'Other']
@@ -34,6 +36,7 @@ function todayStr() { return new Date().toISOString().split('T')[0] }
 
 export function TeamScoringPage() {
   const { isAdmin, loading: sessionLoading, player: adminPlayer } = useSession()
+  const { locale } = useLocale()
   const navigate = useNavigate()
   const [date, setDate] = useState(todayStr())
   const [teamPlayerMap, setTeamPlayerMap] = useState<TeamPlayerMap>(emptyMap())
@@ -213,7 +216,12 @@ export function TeamScoringPage() {
                     )}
                     <div className="flex flex-col gap-0.5 mb-2">
                       {entries.map(e => (
-                        <p key={e.id} className="text-xs text-slate-300 py-0.5">• {e.name}</p>
+                        <p key={e.id} className="text-xs text-slate-300 py-0.5">
+                          • {e.name}
+                          {trainerLabel(e.name, locale) && (
+                            <span className="ml-1 text-slate-500">{trainerLabel(e.name, locale)}</span>
+                          )}
+                        </p>
                       ))}
                     </div>
                     {/* Add existing player dropdown */}
@@ -231,7 +239,7 @@ export function TeamScoringPage() {
                             : '+ הוסף שחקן לקבוצה…'}
                       </option>
                       {availableToAdd.map(p => (
-                        <option key={p.player_id} value={p.player_id}>{p.full_name}</option>
+                        <option key={p.player_id} value={p.player_id}>{p.full_name}{trainerLabel(p.full_name, locale) ? ` ${trainerLabel(p.full_name, locale)}` : ''}</option>
                       ))}
                     </select>
 

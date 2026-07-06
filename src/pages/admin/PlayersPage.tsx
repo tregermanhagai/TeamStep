@@ -2,11 +2,14 @@ import { useState, useEffect } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useSession } from '../../hooks/useSession'
+import { useLocale } from '../../contexts/LocaleContext'
+import { trainerLabel } from '../../lib/playerUtils'
 import { Avatar } from '../../components/Avatar'
 import { Player } from '../../types'
 
 export function PlayersPage() {
   const { isAdmin, player: adminPlayer, loading: sessionLoading } = useSession()
+  const { locale } = useLocale()
   const navigate = useNavigate()
   const [players, setPlayers] = useState<Player[]>([])
   const [loadingPlayers, setLoadingPlayers] = useState(true)
@@ -152,7 +155,7 @@ export function PlayersPage() {
         <div className="px-4 mb-4">
           <div className="bg-card rounded-2xl border border-accent/30 p-4 flex flex-col gap-3">
             <p className="text-sm font-semibold text-white">
-              מיזוג: <span className="text-accent">{mergeSource.full_name}</span>
+              מיזוג: <span className="text-accent">{mergeSource.full_name}{trainerLabel(mergeSource.full_name, locale) ? ` ${trainerLabel(mergeSource.full_name, locale)}` : ''}</span>
             </p>
             <p className="text-xs text-slate-400">
               בחר את השחקן שאליו ירוכז הניקוד — השחקן הנבחר יימחק לאחר המיזוג
@@ -166,7 +169,7 @@ export function PlayersPage() {
               {players
                 .filter(p => p.player_id !== mergeSourceId)
                 .map(p => (
-                  <option key={p.player_id} value={p.player_id}>{p.full_name}</option>
+                  <option key={p.player_id} value={p.player_id}>{p.full_name}{trainerLabel(p.full_name, locale) ? ` ${trainerLabel(p.full_name, locale)}` : ''}</option>
                 ))}
             </select>
             {mergeError && <p className="text-red-400 text-xs">{mergeError}</p>}
@@ -203,7 +206,12 @@ export function PlayersPage() {
               className="flex-1 min-w-0 cursor-pointer"
               onClick={() => navigate('/admin/practice', { state: { highlightPlayerId: player.player_id } })}
             >
-              <p className="text-white font-medium text-sm truncate">{player.full_name}</p>
+              <p className="text-white font-medium text-sm truncate">
+                {player.full_name}
+                {trainerLabel(player.full_name, locale) && (
+                  <span className="ml-1 text-slate-400 text-xs font-normal">{trainerLabel(player.full_name, locale)}</span>
+                )}
+              </p>
               <p className="text-xs text-slate-500 capitalize">
                 {player.role}
                 {player.email?.endsWith('@teamstep.local') && (

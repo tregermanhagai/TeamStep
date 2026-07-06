@@ -1,6 +1,8 @@
 import { motion } from 'framer-motion'
 import { PlayerScore } from '../types'
 import { Avatar } from './Avatar'
+import { useLocale } from '../contexts/LocaleContext'
+import { trainerLabel } from '../lib/playerUtils'
 
 type SortBy = 'points' | 'goals' | 'assists' | 'wins'
 
@@ -19,6 +21,7 @@ interface Props {
 const RANK_COLORS: Record<number, string> = { 1: '#FFD700', 2: '#C0C0C0', 3: '#CD7F32' }
 
 export function LeaderboardRow({ rank, player, isMe, isSelected, sortBy = 'points', onClick, sessionStats }: Props) {
+  const { locale } = useLocale()
   const rankColor = RANK_COLORS[rank] ?? '#64748B'
   const goals   = sessionStats?.goals   ?? player.total_goals
   const assists = sessionStats?.assists ?? player.total_assists
@@ -52,6 +55,9 @@ export function LeaderboardRow({ rank, player, isMe, isSelected, sortBy = 'point
 
       <span className="flex-1 font-medium text-sm truncate">
         {player.full_name}
+        {trainerLabel(player.full_name, locale) && (
+          <span className="ml-1 text-slate-400 text-xs font-normal">{trainerLabel(player.full_name, locale)}</span>
+        )}
         {isMe && <span className="ml-1 text-accent text-xs">(you)</span>}
       </span>
 

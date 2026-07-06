@@ -10,6 +10,7 @@ import { StatPill } from '../components/StatPill'
 import { StatsChart } from '../components/StatsChart'
 import { Avatar } from '../components/Avatar'
 import { useLocale } from '../contexts/LocaleContext'
+import { trainerLabel } from '../lib/playerUtils'
 import { PlayerScore, SessionMatchStat } from '../types'
 import { AppFooter } from '../components/AppFooter'
 import { supabase } from '../lib/supabase'
@@ -23,7 +24,7 @@ type PanelFilter = 'all' | 'last'
 type SortBy = 'points' | 'goals' | 'assists' | 'wins'
 
 export function LeaderboardPage() {
-  const { t } = useLocale()
+  const { t, locale } = useLocale()
   const { player, isAdmin } = useSession()
   const { data, loading } = useLeaderboard()
   const location = useLocation()
@@ -193,7 +194,12 @@ export function LeaderboardPage() {
             <div className="flex items-center gap-2">
               <Avatar player={selectedPlayer} size={36} />
               <div>
-                <p className="text-sm font-semibold text-white">{selectedPlayer.full_name}</p>
+                <p className="text-sm font-semibold text-white">
+                  {selectedPlayer.full_name}
+                  {trainerLabel(selectedPlayer.full_name, locale) && (
+                    <span className="ml-1 text-slate-400 text-xs font-normal">{trainerLabel(selectedPlayer.full_name, locale)}</span>
+                  )}
+                </p>
                 {selectedRank && (
                   <p className="text-xs text-slate-400">#{selectedRank} · {selectedPlayer.total_points} pts</p>
                 )}

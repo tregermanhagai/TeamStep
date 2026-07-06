@@ -2,9 +2,12 @@ import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { usePlayers } from '../hooks/usePlayers'
 import { useSession } from '../hooks/useSession'
+import { useLocale } from '../contexts/LocaleContext'
+import { trainerLabel } from '../lib/playerUtils'
 
 export function AdminRoleManager() {
   const { player: me } = useSession()
+  const { locale } = useLocale()
   const { data: players, loading, refetch } = usePlayers()
   const [busy, setBusy] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -31,7 +34,12 @@ export function AdminRoleManager() {
         .map(p => (
           <div key={p.player_id} className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-white">{p.full_name}</p>
+              <p className="text-sm text-white">
+                {p.full_name}
+                {trainerLabel(p.full_name, locale) && (
+                  <span className="ml-1 text-slate-400 text-xs">{trainerLabel(p.full_name, locale)}</span>
+                )}
+              </p>
               <p className="text-xs text-slate-500">{p.role === 'admin' ? 'מנהל' : 'שחקן'}</p>
             </div>
             <button
