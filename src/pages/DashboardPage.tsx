@@ -17,6 +17,7 @@ type Filter = 'all' | 'last'
 type TeamColor = 'Pink' | 'Blue' | 'Yellow' | 'Green' | 'Red' | 'Other'
 const COLORS: TeamColor[] = ['Pink', 'Blue', 'Yellow', 'Green', 'Red', 'Other']
 const COLOR_LABELS: Record<TeamColor, string> = { Pink: 'ורוד', Blue: 'כחול', Yellow: 'צהוב', Green: 'ירוק', Red: 'אדום', Other: 'אחר' }
+const COLOR_DOT: Record<TeamColor, string> = { Pink: 'bg-pink-500', Blue: 'bg-blue-400', Yellow: 'bg-yellow-400', Green: 'bg-green-500', Red: 'bg-red-500', Other: 'bg-slate-500' }
 function todayStr() { return new Date().toISOString().split('T')[0] }
 
 export function DashboardPage() {
@@ -177,6 +178,12 @@ export function DashboardPage() {
         return (
           <div className="flex flex-col items-center gap-2 mt-5">
             <p className="text-xs text-accent font-medium">{pillLabel}</p>
+            {isSession && src.team_color && (
+              <div className="flex items-center gap-1.5">
+                <span className={`w-2.5 h-2.5 rounded-full ${COLOR_DOT[src.team_color as TeamColor] ?? 'bg-slate-500'}`} />
+                <span className="text-xs text-slate-300">צבע קבוצה: {COLOR_LABELS[src.team_color as TeamColor] ?? src.team_color}</span>
+              </div>
+            )}
             <div className="flex flex-wrap gap-3 px-4 pb-1 justify-center">
               <StatPill label={t('goals')}        value={isSession ? src.goals       : me.total_goals}  color="#22C55E" />
               <StatPill label={t('assists')}      value={isSession ? src.assists      : me.total_assists} color="#06C8E0" />
