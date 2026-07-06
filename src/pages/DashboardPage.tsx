@@ -12,6 +12,7 @@ import { LeaderboardRow } from '../components/LeaderboardRow'
 import { supabase } from '../lib/supabase'
 import { AppFooter } from '../components/AppFooter'
 import { useLastSessionLeaderboard } from '../hooks/useLastSessionLeaderboard'
+import { useSessionTeamRanks } from '../hooks/useSessionTeamRanks'
 
 type Filter = 'all' | 'last'
 type TeamColor = 'Pink' | 'Blue' | 'Yellow' | 'Green' | 'Red' | 'Other'
@@ -65,6 +66,10 @@ export function DashboardPage() {
   const ringPoints  = filter === 'last' ? lastSessionUserPts : (me?.total_points ?? 0)
   const ringMax     = filter === 'last' ? lastSessionMaxPts  : maxPoints
   const ringAvg     = filter === 'last' ? lastSessionAvgPts  : avgPoints
+
+  const currentSessionDate =
+    selectedSession?.data.match_date ?? (filter === 'last' ? filteredHistory[0]?.match_date : null) ?? null
+  const teamRanks = useSessionTeamRanks(currentSessionDate)
 
   useEffect(() => {
     if (!player) return
@@ -181,7 +186,12 @@ export function DashboardPage() {
             {isSession && src.team_color && (
               <div className="flex items-center gap-1.5">
                 <span className={`w-2.5 h-2.5 rounded-full ${COLOR_DOT[src.team_color as TeamColor] ?? 'bg-slate-500'}`} />
-                <span className="text-xs text-slate-300">צבע קבוצה: {COLOR_LABELS[src.team_color as TeamColor] ?? src.team_color}</span>
+                <span className="text-xs text-slate-300">
+                  צבע קבוצה: {COLOR_LABELS[src.team_color as TeamColor] ?? src.team_color}
+                  {teamRanks[src.team_color] !== undefined && (
+                    <span className="text-accent font-semibold"> ({teamRanks[src.team_color]})</span>
+                  )}
+                </span>
               </div>
             )}
             <div className="flex flex-wrap gap-3 px-4 pb-1 justify-center">
