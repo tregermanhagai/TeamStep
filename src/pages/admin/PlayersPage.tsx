@@ -203,7 +203,7 @@ export function PlayersPage() {
               <p className="text-white font-medium text-sm truncate">{player.full_name}</p>
               <p className="text-xs text-slate-500 capitalize">
                 {player.role}
-                {!player.email && !player.phone && (
+                {player.email?.endsWith('@teamstep.local') && (
                   <span className="ml-2 text-yellow-500">· ידני</span>
                 )}
               </p>

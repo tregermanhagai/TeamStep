@@ -3,7 +3,7 @@ import { Session } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
 import { Player } from '../types'
 
-const ADMIN_EMAILS = ['hagai1973@gmail.com', 'hagaitregerman@gmail.com']
+const SUPER_ADMIN_EMAIL = 'hagai1973@gmail.com'
 
 
 export interface SessionState {
@@ -101,7 +101,7 @@ export function useSession(): SessionState {
   return {
     session,
     player,
-    isAdmin: ADMIN_EMAILS.includes(session?.user?.email ?? ''),
+    isAdmin: player?.role === 'admin' || session?.user?.email === SUPER_ADMIN_EMAIL,
     needsOnboarding,
     loading,
     refetchPlayer: () => { if (session) fetchPlayer(session) },
