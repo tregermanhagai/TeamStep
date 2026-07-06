@@ -142,22 +142,22 @@ export function ProfilePage() {
           <p className="text-xs text-accent font-semibold uppercase tracking-wider mb-2">{t('adminSection')}</p>
           <div className="bg-card rounded-2xl divide-y divide-slate-700/50">
             <Link
-              to="/admin/practice"
+              to="/admin/team-scoring"
               className="flex items-center justify-between px-4 py-3 hover:bg-slate-700/30 rounded-t-2xl transition-colors"
             >
               <div>
-                <p className="text-sm text-white font-medium">דוח אימון</p>
-                <p className="text-xs text-slate-400">סמן נוכחות וניקוד אישי לשחקנים</p>
+                <p className="text-sm text-white font-medium">ניקוד קבוצתי</p>
+                <p className="text-xs text-slate-400">שיוך שחקנים, מספר נצחונות ומשחקים ללא ספיגה</p>
               </div>
               <span className="text-slate-500 text-lg">›</span>
             </Link>
             <Link
-              to="/admin/team-scoring"
+              to="/admin/practice"
               className="flex items-center justify-between px-4 py-3 hover:bg-slate-700/30 transition-colors"
             >
               <div>
-                <p className="text-sm text-white font-medium">ניקוד קבוצתי</p>
-                <p className="text-xs text-slate-400">ניצחונות וללא ספיגה לפי צבע קבוצה</p>
+                <p className="text-sm text-white font-medium">דוח אימון</p>
+                <p className="text-xs text-slate-400">סמן נוכחות וניקוד אישי לשחקנים</p>
               </div>
               <span className="text-slate-500 text-lg">›</span>
             </Link>
