@@ -124,9 +124,6 @@ export function TeamScoringPage() {
 
   const hasAnyPlayers = COLORS.some(c => teamPlayerMap[c].length > 0)
 
-  const assignedIds = new Set(COLORS.flatMap(c => teamPlayerMap[c].map(p => p.id)))
-  const unassignedPlayers = allPlayers.filter(p => !assignedIds.has(p.player_id))
-
   return (
     <div className="min-h-screen bg-bg pb-32">
       {/* Header */}
@@ -165,6 +162,8 @@ export function TeamScoringPage() {
             const entries = teamPlayerMap[color]
             const ts = teamStats[color]
             const isExpanded = expandedColor === color
+            const inThisColor = new Set(entries.map(e => e.id))
+            const availableToAdd = allPlayers.filter(p => !inThisColor.has(p.player_id))
 
             return (
               <div key={color} className={`bg-card rounded-2xl border ${BORDER_COLOR[color]}`}>
@@ -201,17 +200,17 @@ export function TeamScoringPage() {
                     <select
                       value=""
                       onChange={e => { if (e.target.value) addPlayerToTeam(e.target.value, color) }}
-                      disabled={addingToColor === color || unassignedPlayers.length === 0}
+                      disabled={addingToColor === color || availableToAdd.length === 0}
                       className="w-full bg-bg text-white rounded-xl px-3 py-2 text-xs border border-slate-700 focus:outline-none focus:border-accent disabled:opacity-50"
                     >
                       <option value="">
-                        {unassignedPlayers.length === 0
-                          ? 'כל השחקנים כבר שויכו לקבוצה'
+                        {availableToAdd.length === 0
+                          ? 'כל השחקנים כבר בקבוצה זו'
                           : addingToColor === color
                             ? 'מוסיף…'
                             : '+ הוסף שחקן לקבוצה…'}
                       </option>
-                      {unassignedPlayers.map(p => (
+                      {availableToAdd.map(p => (
                         <option key={p.player_id} value={p.player_id}>{p.full_name}</option>
                       ))}
                     </select>
