@@ -54,6 +54,7 @@ export function PracticeReportPage() {
   const [date, setDate] = useState(todayStr())
   const [players, setPlayers] = useState<Player[]>([])
   const [stats, setStats] = useState<Record<string, PlayerStats>>({})
+  const [expandedPlayers, setExpandedPlayers] = useState<Set<string>>(new Set())
   const [saving, setSaving] = useState(false)
   const [savedCount, setSavedCount] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -128,6 +129,7 @@ export function PracticeReportPage() {
     })
 
     if (highlightPlayerId) {
+      setExpandedPlayers(prev => new Set([...prev, highlightPlayerId]))
       setTimeout(() => {
         playerRefs.current[highlightPlayerId]?.scrollIntoView({ behavior: 'smooth', block: 'center' })
       }, 150)
@@ -136,10 +138,20 @@ export function PracticeReportPage() {
 
   function toggle(playerId: string) {
     setSavedCount(null)
-    setStats(s => ({
-      ...s,
-      [playerId]: { ...s[playerId], attended: !s[playerId].attended },
-    }))
+    const nowAttending = !stats[playerId]?.attended
+    setStats(s => ({ ...s, [playerId]: { ...s[playerId], attended: nowAttending } }))
+    if (!nowAttending) {
+      setExpandedPlayers(prev => { const next = new Set(prev); next.delete(playerId); return next })
+    }
+  }
+
+  function toggleExpand(playerId: string) {
+    setExpandedPlayers(prev => {
+      const next = new Set(prev)
+      if (next.has(playerId)) next.delete(playerId)
+      else next.add(playerId)
+      return next
+    })
   }
 
   function setStat<K extends keyof PlayerStats>(playerId: string, field: K, value: PlayerStats[K]) {
@@ -212,25 +224,38 @@ export function PracticeReportPage() {
           if (!s) return null
           return (
             <div key={player.player_id} ref={el => { playerRefs.current[player.player_id] = el }} className="bg-card rounded-2xl overflow-hidden">
-              <button
-                onClick={() => toggle(player.player_id)}
-                className="w-full flex items-center justify-between px-4 py-3 active:bg-slate-700/30 transition-colors"
-              >
-                <div className="flex items-center gap-3">
+              <div className="flex items-center px-4 py-3 gap-3">
+                {/* Attendance toggle circle */}
+                <button
+                  onClick={() => toggle(player.player_id)}
+                  className={`w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all flex-shrink-0 ${
+                    s.attended ? 'bg-accent border-accent text-bg' : 'border-slate-600'
+                  }`}
+                >
+                  {s.attended && <span className="text-xs font-bold">✓</span>}
+                </button>
+
+                {/* Player info */}
+                <div className="flex items-center gap-3 flex-1 min-w-0">
                   <Avatar player={player} size={36} />
-                  <span className="text-white font-medium text-sm">{player.full_name}</span>
+                  <span className="text-white font-medium text-sm truncate">{player.full_name}</span>
                   {player.role === 'admin' && (
                     <span className="text-yellow-400 text-xs leading-none" title="מנהל">★</span>
                   )}
                 </div>
-                <div className={`w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all flex-shrink-0 ${
-                  s.attended ? 'bg-accent border-accent text-bg' : 'border-slate-600'
-                }`}>
-                  {s.attended && <span className="text-xs font-bold">✓</span>}
-                </div>
-              </button>
 
-              {s.attended && (
+                {/* Expand chevron — only when attending */}
+                {s.attended && (
+                  <button
+                    onClick={() => toggleExpand(player.player_id)}
+                    className="text-slate-500 text-xs px-2 py-1 flex-shrink-0 active:opacity-70"
+                  >
+                    {expandedPlayers.has(player.player_id) ? '▲' : '▼'}
+                  </button>
+                )}
+              </div>
+
+              {s.attended && expandedPlayers.has(player.player_id) && (
                 <div className="px-4 pb-4 border-t border-slate-700/40 pt-3 flex flex-col gap-4">
                   <div className="grid grid-cols-2 gap-2">
                     <Counter label="שערים" value={s.goals}   onChange={v => setStat(player.player_id, 'goals', v)} />
