@@ -33,7 +33,7 @@ const emptyStats = (): Record<TeamColor, TeamStat> => ({
 function todayStr() { return new Date().toISOString().split('T')[0] }
 
 export function TeamScoringPage() {
-  const { isAdmin, loading: sessionLoading } = useSession()
+  const { isAdmin, loading: sessionLoading, player: adminPlayer } = useSession()
   const navigate = useNavigate()
   const [date, setDate] = useState(todayStr())
   const [teamPlayerMap, setTeamPlayerMap] = useState<TeamPlayerMap>(emptyMap())
@@ -43,12 +43,16 @@ export function TeamScoringPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [addingToColor, setAddingToColor] = useState<TeamColor | null>(null)
+  const [newPlayerName, setNewPlayerName] = useState('')
+  const [creatingPlayer, setCreatingPlayer] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     supabase.from('players').select('player_id, full_name').eq('is_active', true).order('full_name')
       .then(({ data }) => { if (data) setAllPlayers(data) })
   }, [])
+
+  useEffect(() => { setNewPlayerName('') }, [expandedColor])
 
   useEffect(() => {
     if (!sessionLoading && isAdmin) loadReports(date)
@@ -84,6 +88,22 @@ export function TeamScoringPage() {
     setTeamPlayerMap(grouped)
     setTeamStats(inferred)
     setLoading(false)
+  }
+
+  async function createAndAddPlayer(color: TeamColor) {
+    if (!newPlayerName.trim() || !adminPlayer?.team_id) return
+    setCreatingPlayer(true)
+    const { data: newId, error: addErr } = await supabase.rpc('admin_add_player', {
+      p_full_name: newPlayerName.trim(),
+      p_team_id:   adminPlayer.team_id,
+    })
+    if (addErr || !newId) { console.error('[createAndAddPlayer]', addErr); setCreatingPlayer(false); return }
+    setNewPlayerName('')
+    await addPlayerToTeam(newId as string, color)
+    setCreatingPlayer(false)
+    // Refresh full player list so the new player appears in future dropdowns
+    const { data } = await supabase.from('players').select('player_id, full_name').eq('is_active', true).order('full_name')
+    if (data) setAllPlayers(data)
   }
 
   async function addPlayerToTeam(playerId: string, color: TeamColor) {
@@ -196,7 +216,7 @@ export function TeamScoringPage() {
                         <p key={e.id} className="text-xs text-slate-300 py-0.5">• {e.name}</p>
                       ))}
                     </div>
-                    {/* Add player dropdown */}
+                    {/* Add existing player dropdown */}
                     <select
                       value=""
                       onChange={e => { if (e.target.value) addPlayerToTeam(e.target.value, color) }}
@@ -214,6 +234,25 @@ export function TeamScoringPage() {
                         <option key={p.player_id} value={p.player_id}>{p.full_name}</option>
                       ))}
                     </select>
+
+                    {/* Create new manual player */}
+                    <div className="flex gap-2 mt-2">
+                      <input
+                        type="text"
+                        value={newPlayerName}
+                        onChange={e => setNewPlayerName(e.target.value)}
+                        onKeyDown={e => e.key === 'Enter' && createAndAddPlayer(color)}
+                        placeholder="שם שחקן חדש…"
+                        className="flex-1 bg-bg text-white rounded-xl px-3 py-2 text-xs border border-slate-700 focus:outline-none focus:border-accent placeholder-slate-600"
+                      />
+                      <button
+                        onClick={() => createAndAddPlayer(color)}
+                        disabled={!newPlayerName.trim() || creatingPlayer}
+                        className="px-3 py-2 bg-accent text-bg text-xs font-bold rounded-xl active:scale-95 transition-all disabled:opacity-50"
+                      >
+                        {creatingPlayer ? '…' : 'צור'}
+                      </button>
+                    </div>
                   </div>
                 )}
 

@@ -201,6 +201,23 @@ export function ReportPage() {
         {/* Stats — only shown when a valid match is loaded */}
         {matchId && !matchLocked && (
           <>
+            <div className="mb-6">
+              <p className="text-sm text-slate-400 mb-2">{t('teamColor')}</p>
+              <div className="flex gap-2 flex-wrap">
+                {COLORS.map((c) => (
+                  <button
+                    key={c}
+                    onClick={() => setTeamColor(c)}
+                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                      teamColor === c ? 'bg-accent text-bg' : 'bg-card text-slate-400'
+                    }`}
+                  >
+                    {{ Pink: t('colorPink'), Blue: t('colorBlue'), Yellow: t('colorYellow'), Green: t('colorGreen'), Red: t('colorRed'), Other: t('colorOther') }[c]}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <ChipSelector label={t('gamesWon')}    value={teamWon}     onChange={setTeamWon} />
             <ChipSelector label={t('goals')}        value={goals}       onChange={setGoals} />
             <ChipSelector label={t('assists')}      value={assists}     onChange={setAssists} />
@@ -218,23 +235,6 @@ export function ReportPage() {
                 />
               )
             })}
-
-            <div className="mb-6">
-              <p className="text-sm text-slate-400 mb-2">{t('teamColor')}</p>
-              <div className="flex gap-2 flex-wrap">
-                {COLORS.map((c) => (
-                  <button
-                    key={c}
-                    onClick={() => setTeamColor(c)}
-                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                      teamColor === c ? 'bg-accent text-bg' : 'bg-card text-slate-400'
-                    }`}
-                  >
-                    {{ Pink: t('colorPink'), Blue: t('colorBlue'), Yellow: t('colorYellow'), Green: t('colorGreen'), Red: t('colorRed'), Other: t('colorOther') }[c]}
-                  </button>
-                ))}
-              </div>
-            </div>
 
             {error && (
               <div className="bg-red-900/30 border border-red-800 rounded-xl px-4 py-3 text-red-300 text-sm mb-4">
