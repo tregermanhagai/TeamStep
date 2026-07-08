@@ -36,6 +36,7 @@ export function DashboardPage() {
   const [reportSubmitting, setReportSubmitting] = useState(false)
   const [reportSaved,      setReportSaved]      = useState(false)
   const [reportResetting,  setReportResetting]  = useState(false)
+  const [showInfo,         setShowInfo]         = useState(false)
   const { player } = useSession()
   const { data: leaderboard, loading: lbLoading } = useLeaderboard()
   const { data: history, loading: histLoading, refetch: refetchHistory } = useMyStats(player?.player_id)
@@ -154,6 +155,11 @@ export function DashboardPage() {
               <p className="text-accent font-bold text-lg leading-none">#{myRank}</p>
             </div>
           )}
+          <button
+            onClick={() => setShowInfo(true)}
+            className="bg-card text-xl px-3 rounded-xl border border-slate-700 flex items-center justify-center"
+            title="מידע"
+          >🛟</button>
           <button
             onClick={() => supabase.auth.signOut()}
             className="bg-card text-slate-400 text-xs px-3 rounded-xl border border-slate-700 hover:text-white transition-colors"
@@ -286,7 +292,7 @@ export function DashboardPage() {
         <div className="flex gap-2">
           <button
             onClick={submitReport}
-            disabled={reportSubmitting || !reportMatchId}
+            disabled={reportSubmitting || !reportMatchId || (reportGoals === 0 && reportAssists === 0 && reportWon === 0 && reportCS === 0 && reportColor === 'Other')}
             className="flex-1 bg-accent text-bg text-sm font-bold py-2.5 rounded-xl active:scale-95 transition-all disabled:opacity-50"
           >
             {reportSubmitting ? 'שומר...' : 'שמור נתוני אימון'}
@@ -328,6 +334,40 @@ export function DashboardPage() {
         )}
       </div>
       <AppFooter />
+
+      {/* Info popup */}
+      {showInfo && (
+        <div
+          className="fixed inset-0 bg-black/60 z-50 flex items-end justify-center p-4"
+          onClick={() => setShowInfo(false)}
+        >
+          <div
+            className="bg-card rounded-2xl p-6 w-full max-w-sm mb-6 flex flex-col items-center gap-4"
+            onClick={e => e.stopPropagation()}
+          >
+            <span className="text-5xl">🛟</span>
+            <div className="text-center">
+              <p className="text-white font-bold text-base mb-1">TeamStep</p>
+              <p className="text-slate-400 text-xs">גרסה 0.1.0</p>
+            </div>
+            <a
+              href="https://wa.me/972545966296"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full flex items-center justify-center gap-2 bg-green-600 hover:bg-green-500 text-white font-semibold text-sm py-3 rounded-xl transition-colors active:scale-95"
+            >
+              <span className="text-lg">💬</span>
+              צור קשר ב-WhatsApp
+            </a>
+            <button
+              onClick={() => setShowInfo(false)}
+              className="text-slate-500 text-xs"
+            >
+              סגור
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
