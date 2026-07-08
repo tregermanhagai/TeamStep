@@ -20,7 +20,7 @@ const TEXT_COLOR: Record<TeamColor, string> = {
 }
 
 type TeamStat = { wins: number; cs: number }
-type PlayerEntry = { id: string; name: string }
+type PlayerEntry = { id: string; name: string; isNew?: boolean }
 type TeamPlayerMap = Record<TeamColor, PlayerEntry[]>
 
 const emptyMap = (): TeamPlayerMap => ({
@@ -45,7 +45,6 @@ export function TeamScoringPage() {
   const [expandedColor, setExpandedColor] = useState<TeamColor | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [addingToColor, setAddingToColor] = useState<TeamColor | null>(null)
   const [newPlayerName, setNewPlayerName] = useState('')
   const [creatingPlayer, setCreatingPlayer] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -102,19 +101,28 @@ export function TeamScoringPage() {
     })
     if (addErr || !newId) { console.error('[createAndAddPlayer]', addErr); setCreatingPlayer(false); return }
     setNewPlayerName('')
-    await addPlayerToTeam(newId as string, color)
+    addPlayerToTeam(newId as string, newPlayerName.trim(), color)
     setCreatingPlayer(false)
-    // Refresh full player list so the new player appears in future dropdowns
     const { data } = await supabase.from('players').select('player_id, full_name').eq('is_active', true).order('full_name')
     if (data) setAllPlayers(data)
   }
 
+  function addPlayerToTeam(playerId: string, playerName: string, color: TeamColor) {
+    setTeamPlayerMap(prev => ({
+      ...prev,
+      [color]: [...prev[color], { id: playerId, name: playerName, isNew: true }],
+    }))
+  }
+
   async function removePlayerFromTeam(playerId: string) {
-    const { error: err } = await supabase.rpc('admin_remove_attendance', {
-      p_player_id:  playerId,
-      p_match_date: date,
-    })
-    if (err) { console.error('[removePlayerFromTeam]', err); return }
+    const isNew = COLORS.some(c => teamPlayerMap[c].some(e => e.id === playerId && e.isNew))
+    if (!isNew) {
+      const { error: err } = await supabase.rpc('admin_remove_attendance', {
+        p_player_id:  playerId,
+        p_match_date: date,
+      })
+      if (err) { console.error('[removePlayerFromTeam]', err); return }
+    }
     setTeamPlayerMap(prev => {
       const next = { ...prev }
       for (const color of COLORS) {
@@ -124,24 +132,27 @@ export function TeamScoringPage() {
     })
   }
 
-  async function addPlayerToTeam(playerId: string, color: TeamColor) {
-    setAddingToColor(color)
-    const { error: err } = await supabase.rpc('admin_save_attendance', {
-      p_player_id:  playerId,
-      p_match_date: date,
-      p_goals:      0,
-      p_assists:    0,
-      p_color:      color,
-    })
-    if (err) console.error('[addPlayerToTeam]', err)
-    setAddingToColor(null)
-    await loadReports(date)
-  }
-
   async function saveAll() {
     setSaving(true)
     setError(null)
     let failed = 0
+
+    // Persist newly added players before setting team scores
+    for (const color of COLORS) {
+      for (const entry of teamPlayerMap[color]) {
+        if (!entry.isNew) continue
+        const { error: err } = await supabase.rpc('admin_save_attendance', {
+          p_player_id:  entry.id,
+          p_match_date: date,
+          p_goals:      0,
+          p_assists:    0,
+          p_color:      color,
+        })
+        if (err) { failed++; console.error('[admin_save_attendance]', err) }
+      }
+    }
+
+    // Set wins / CS for every color
     for (const color of COLORS) {
       const ts = teamStats[color]
       const { error: err } = await supabase.rpc('admin_set_team_score', {
@@ -152,6 +163,7 @@ export function TeamScoringPage() {
       })
       if (err) { failed++; console.error('[admin_set_team_score]', err) }
     }
+
     setSaving(false)
     if (failed > 0) setError(`${failed} color(s) failed. Check console.`)
     else navigate('/leaderboard')
@@ -237,6 +249,7 @@ export function TeamScoringPage() {
                             {trainerLabel(e.name, locale) && (
                               <span className="ml-1 text-slate-500">{trainerLabel(e.name, locale)}</span>
                             )}
+                            {e.isNew && <span className="ml-1 text-accent/60 text-[10px]">✦</span>}
                           </p>
                           <button
                             onClick={() => removePlayerFromTeam(e.id)}
@@ -249,16 +262,18 @@ export function TeamScoringPage() {
                     {/* Add existing player dropdown */}
                     <select
                       value=""
-                      onChange={e => { if (e.target.value) addPlayerToTeam(e.target.value, color) }}
-                      disabled={addingToColor === color || availableToAdd.length === 0}
+                      onChange={e => {
+                        if (!e.target.value) return
+                        const p = allPlayers.find(p => p.player_id === e.target.value)
+                        if (p) addPlayerToTeam(p.player_id, p.full_name, color)
+                      }}
+                      disabled={availableToAdd.length === 0}
                       className="w-full bg-bg text-white rounded-xl px-3 py-2 text-xs border border-slate-700 focus:outline-none focus:border-accent disabled:opacity-50"
                     >
                       <option value="">
                         {availableToAdd.length === 0
                           ? 'כל השחקנים כבר בקבוצה זו'
-                          : addingToColor === color
-                            ? 'מוסיף…'
-                            : '+ הוסף שחקן לקבוצה…'}
+                          : '+ הוסף שחקן לקבוצה…'}
                       </option>
                       {availableToAdd.map(p => (
                         <option key={p.player_id} value={p.player_id}>{p.full_name}{trainerLabel(p.full_name, locale) ? ` ${trainerLabel(p.full_name, locale)}` : ''}</option>
