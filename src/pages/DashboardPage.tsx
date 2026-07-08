@@ -17,7 +17,7 @@ import { useSessionTeamRanks } from '../hooks/useSessionTeamRanks'
 type Filter = 'all' | 'last'
 type TeamColor = 'Pink' | 'Blue' | 'Yellow' | 'Green' | 'Red' | 'Other'
 const COLORS: TeamColor[] = ['Pink', 'Blue', 'Yellow', 'Green', 'Red', 'Other']
-const COLOR_LABELS: Record<TeamColor, string> = { Pink: 'ורוד', Blue: 'כחול', Yellow: 'צהוב', Green: 'ירוק', Red: 'אדום', Other: 'אחר' }
+const COLOR_KEY: Record<TeamColor, 'colorPink'|'colorBlue'|'colorYellow'|'colorGreen'|'colorRed'|'colorOther'> = { Pink: 'colorPink', Blue: 'colorBlue', Yellow: 'colorYellow', Green: 'colorGreen', Red: 'colorRed', Other: 'colorOther' }
 const COLOR_DOT: Record<TeamColor, string> = { Pink: 'bg-pink-500', Blue: 'bg-blue-400', Yellow: 'bg-yellow-400', Green: 'bg-green-500', Red: 'bg-red-500', Other: 'bg-slate-500' }
 function todayStr() { return new Date().toISOString().split('T')[0] }
 
@@ -217,7 +217,7 @@ export function DashboardPage() {
               <div className="flex items-center gap-1.5">
                 <span className={`w-2.5 h-2.5 rounded-full ${COLOR_DOT[src.team_color as TeamColor] ?? 'bg-slate-500'}`} />
                 <span className="text-xs text-slate-300">
-                  צבע קבוצה: {COLOR_LABELS[src.team_color as TeamColor] ?? src.team_color}
+                  צבע קבוצה: {t(COLOR_KEY[src.team_color as TeamColor] ?? 'colorOther')}
                   {teamRanks[src.team_color] !== undefined && (
                     <span className="text-accent font-semibold"> ({teamRanks[src.team_color]})</span>
                   )}
@@ -258,16 +258,16 @@ export function DashboardPage() {
 
       {/* Inline session report */}
       <div className="mx-4 mt-5 bg-card rounded-2xl p-4">
-        <p className="text-sm font-semibold text-white mb-3 text-right">נתוני האימון שלי היום</p>
+        <p className="text-sm font-semibold text-white mb-3 text-right">{t('todaySession')}</p>
         <div className="grid grid-cols-4 gap-2 mb-3">
           {([
-            { label: 'שער',   value: reportGoals,   set: setReportGoals   },
-            { label: 'בישול', value: reportAssists,  set: setReportAssists },
-            { label: "נצ'",   value: reportWon,      set: setReportWon     },
-            { label: 'ללא ספיגה', value: reportCS,   set: setReportCS      },
-          ] as const).map(({ label, value, set }) => (
-            <div key={label} className="flex flex-col items-center gap-1">
-              <p className="text-xs text-slate-400">{label}</p>
+            { labelKey: 'statGoal'   as const, value: reportGoals,   set: setReportGoals   },
+            { labelKey: 'statAssist' as const, value: reportAssists,  set: setReportAssists },
+            { labelKey: 'statWin'    as const, value: reportWon,      set: setReportWon     },
+            { labelKey: 'statCS'     as const, value: reportCS,       set: setReportCS      },
+          ]).map(({ labelKey, value, set }) => (
+            <div key={labelKey} className="flex flex-col items-center gap-1">
+              <p className="text-xs text-slate-400">{t(labelKey)}</p>
               <div className="flex items-center gap-1">
                 <button onClick={() => set(Math.max(0, value - 1))} className="w-7 h-7 rounded-full bg-slate-700 text-white flex items-center justify-center active:scale-95">−</button>
                 <span className="text-white font-bold text-sm w-4 text-center">{value}</span>
@@ -277,25 +277,25 @@ export function DashboardPage() {
           ))}
         </div>
         <div className="flex items-center gap-2 mb-3 flex-wrap justify-end">
-          <p className="text-xs text-slate-400">:קבוצה</p>
+          <p className="text-xs text-slate-400">{t('teamLabel')}</p>
           {COLORS.map(c => (
             <button
               key={c}
               onClick={() => setReportColor(c)}
               className={`px-2 py-0.5 rounded-lg text-xs font-medium transition-all ${reportColor === c ? 'bg-accent text-bg' : 'bg-slate-700 text-slate-300'}`}
             >
-              {COLOR_LABELS[c]}
+              {t(COLOR_KEY[c])}
             </button>
           ))}
         </div>
-        {reportSaved && <p className="text-green-400 text-xs mb-2 text-center">נשמר בהצלחה ✓</p>}
+        {reportSaved && <p className="text-green-400 text-xs mb-2 text-center">{t('savedOk')}</p>}
         <div className="flex gap-2">
           <button
             onClick={submitReport}
             disabled={reportSubmitting || !reportMatchId || (reportGoals === 0 && reportAssists === 0 && reportWon === 0 && reportCS === 0 && reportColor === 'Other')}
             className="flex-1 bg-accent text-bg text-sm font-bold py-2.5 rounded-xl active:scale-95 transition-all disabled:opacity-50"
           >
-            {reportSubmitting ? 'שומר...' : 'שמור נתוני אימון'}
+            {reportSubmitting ? t('saving') : t('saveSession')}
           </button>
           {reportExists && (
             <button
@@ -303,7 +303,7 @@ export function DashboardPage() {
               disabled={reportResetting}
               className="px-4 py-2.5 bg-slate-700 text-red-400 text-sm font-medium rounded-xl active:scale-95 transition-all disabled:opacity-50"
             >
-              {reportResetting ? '...' : 'מחק'}
+              {reportResetting ? '...' : t('deleteSession')}
             </button>
           )}
         </div>
