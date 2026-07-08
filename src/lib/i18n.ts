@@ -82,6 +82,11 @@ export const translations = {
     saveSession:          'Save Session',
     savedOk:              'Saved ✓',
     deleteSession:        'Delete',
+    navChat:              'Chat',
+    chatTitle:            'Team Chat',
+    chatPlaceholder:      'Write a message…',
+    chatSend:             'Send',
+    chatNoMessages:       'No messages yet',
   },
   he: {
     tagline:              'עקוב אחרי הביצועים שלך במגרש',
@@ -164,6 +169,11 @@ export const translations = {
     saveSession:          'שמור נתוני אימון',
     savedOk:              'נשמר בהצלחה ✓',
     deleteSession:        'מחק',
+    navChat:              "צ'אט",
+    chatTitle:            "צ'אט קבוצתי",
+    chatPlaceholder:      'כתוב הודעה…',
+    chatSend:             'שלח',
+    chatNoMessages:       'אין הודעות עדיין',
   },
 } as const
 

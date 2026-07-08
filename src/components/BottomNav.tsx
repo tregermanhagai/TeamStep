@@ -1,14 +1,17 @@
 import { NavLink } from 'react-router-dom'
 import { useLocale } from '../contexts/LocaleContext'
 import { useSession } from '../hooks/useSession'
+import { useChatUnread } from '../hooks/useChatUnread'
 
 export function BottomNav() {
   const { t } = useLocale()
   const { isAdmin } = useSession()
+  const { hasUnread } = useChatUnread()
   const tabs = [
     { to: '/dashboard',   icon: '⚽',  label: t('navDashboard') },
     { to: '/leaderboard', icon: '🏆', label: t('navBoard') },
     { to: '/report',      icon: '+',  label: t('navReport') },
+    { to: '/chat',        icon: '💬', label: t('navChat') },
     { to: '/profile',     icon: '👤', label: isAdmin ? t('navAdmin') : t('navProfile') },
   ]
   return (
@@ -29,7 +32,12 @@ export function BottomNav() {
               {tab.icon}
             </span>
           ) : (
-            <span className="h-7 flex items-center justify-center text-xl leading-none">{tab.icon}</span>
+            <span className="relative h-7 flex items-center justify-center text-xl leading-none">
+              {tab.icon}
+              {tab.to === '/chat' && hasUnread && (
+                <span className="absolute top-0 right-0 w-2 h-2 rounded-full bg-green-400" />
+              )}
+            </span>
           )}
           <span>{tab.label}</span>
         </NavLink>

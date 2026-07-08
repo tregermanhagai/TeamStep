@@ -12,6 +12,7 @@ import { ScoringPage } from './pages/admin/ScoringPage'
 import { PracticeReportPage } from './pages/admin/PracticeReportPage'
 import { TeamScoringPage } from './pages/admin/TeamScoringPage'
 import { PlayersPage } from './pages/admin/PlayersPage'
+import { ChatPage } from './pages/ChatPage'
 import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage'
 import { BottomNav } from './components/BottomNav'
 import { supabase } from './lib/supabase'
@@ -62,6 +63,10 @@ export default function App() {
         <Route
           path="/report"
           element={<AuthGuard><ReportPage /><BottomNav /></AuthGuard>}
+        />
+        <Route
+          path="/chat"
+          element={<AuthGuard><ChatPage /><BottomNav /></AuthGuard>}
         />
         <Route
           path="/profile"
