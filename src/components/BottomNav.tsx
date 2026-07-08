@@ -6,7 +6,7 @@ import { useChatUnread } from '../hooks/useChatUnread'
 export function BottomNav() {
   const { t } = useLocale()
   const { isAdmin } = useSession()
-  const { hasUnread } = useChatUnread()
+  const hasUnread = useChatUnread()
   const tabs = [
     { to: '/dashboard',   icon: '⚽',  label: t('navDashboard') },
     { to: '/leaderboard', icon: '🏆', label: t('navBoard') },

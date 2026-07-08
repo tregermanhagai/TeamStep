@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, KeyboardEvent } from 'react'
 import { supabase } from '../lib/supabase'
 import { useSession } from '../hooks/useSession'
-import { useChatUnread } from '../hooks/useChatUnread'
+import { markChatRead } from '../hooks/useChatUnread'
 import { useLocale } from '../contexts/LocaleContext'
 
 interface Message {
@@ -38,7 +38,6 @@ function Initials({ name, self }: { name: string; self: boolean }) {
 export function ChatPage() {
   const { t } = useLocale()
   const { player } = useSession()
-  const { markRead } = useChatUnread()
   const [messages, setMessages] = useState<Message[]>([])
   const [body, setBody] = useState('')
   const [sending, setSending] = useState(false)
@@ -47,7 +46,8 @@ export function ChatPage() {
   useEffect(() => {
     if (!player?.team_id) return
 
-    markRead()
+    // Clear the unread badge
+    markChatRead()
 
     supabase
       .from('messages')
@@ -55,24 +55,28 @@ export function ChatPage() {
       .eq('team_id', player.team_id)
       .order('created_at', { ascending: true })
       .limit(50)
-      .then(({ data }) => {
-        if (data) setMessages(data as Message[])
+      .then(({ data, error }) => {
+        if (error) console.error('[ChatPage] fetch error', error)
+        else if (data) setMessages(data as Message[])
       })
 
     const channel = supabase
       .channel(`chat-page-${player.team_id}`)
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'messages', filter: `team_id=eq.${player.team_id}` },
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `team_id=eq.${player.team_id}`,
+        },
         (payload) => {
           setMessages((prev) => [...prev, payload.new as Message])
         }
       )
       .subscribe()
 
-    return () => {
-      supabase.removeChannel(channel)
-    }
+    return () => { supabase.removeChannel(channel) }
   }, [player?.team_id])
 
   useEffect(() => {
@@ -81,9 +85,9 @@ export function ChatPage() {
 
   async function sendMessage() {
     if (!player || !body.trim()) return
-    setSending(true)
     const trimmed = body.trim()
     setBody('')
+    setSending(true)
     const { error } = await supabase.from('messages').insert({
       team_id: player.team_id,
       player_id: player.player_id,
