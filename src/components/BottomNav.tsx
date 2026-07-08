@@ -6,10 +6,10 @@ export function BottomNav() {
   const { t } = useLocale()
   const { isAdmin } = useSession()
   const tabs = [
-    { to: '/dashboard',   icon: '◎',  label: t('navDashboard') },
+    { to: '/dashboard',   icon: '⚽',  label: t('navDashboard') },
     { to: '/leaderboard', icon: '🏆', label: t('navBoard') },
     { to: '/report',      icon: '+',  label: t('navReport') },
-    { to: '/profile',     icon: '👤', label: isAdmin ? 'ניהול' : t('navProfile') },
+    { to: '/profile',     icon: '👤', label: isAdmin ? t('navAdmin') : t('navProfile') },
   ]
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-slate-700/50 flex z-50"
