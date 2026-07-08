@@ -1,4 +1,7 @@
+import { useLocale } from '../contexts/LocaleContext'
+
 export function AppFooter() {
+  const { t } = useLocale()
   return (
     <footer className="mt-8 mb-2 px-4 text-center space-y-1">
       <div>
@@ -8,7 +11,7 @@ export function AppFooter() {
           rel="noopener noreferrer"
           className="text-xs text-slate-500 hover:text-slate-400 underline"
         >
-          נגישות
+          {t('accessibility')}
         </a>
       </div>
       <p className="text-xs text-slate-600">© 2026 All rights reserved: <a href="https://hagaitregerman.onrender.com/" target="_blank" rel="noopener noreferrer" className="hover:text-slate-400 underline">hagai.tregerman</a></p>
