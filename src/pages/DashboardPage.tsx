@@ -348,7 +348,7 @@ export function DashboardPage() {
             <span className="text-5xl">🛟</span>
             <div className="text-center">
               <p className="text-white font-bold text-base mb-1">TeamStep</p>
-              <p className="text-slate-400 text-xs">גרסה 0.1.0</p>
+              <p className="text-slate-400 text-xs">גרסה {__APP_VERSION__}</p>
             </div>
             <a
               href="https://wa.me/972545966296"
