@@ -5,6 +5,7 @@ import { useLeaderboard } from '../hooks/useLeaderboard'
 import { useMyStats } from '../hooks/useMyStats'
 import { usePlayerCustomTotals } from '../hooks/usePlayerCustomTotals'
 import { useLastSessionLeaderboard } from '../hooks/useLastSessionLeaderboard'
+import { useSessionTeamRanks } from '../hooks/useSessionTeamRanks'
 import { LeaderboardRow } from '../components/LeaderboardRow'
 import { StatPill } from '../components/StatPill'
 import { StatsChart } from '../components/StatsChart'
@@ -18,6 +19,7 @@ import { supabase } from '../lib/supabase'
 type TeamColor = 'Pink' | 'Blue' | 'Yellow' | 'Green' | 'Red' | 'Other'
 const COLORS: TeamColor[] = ['Pink', 'Blue', 'Yellow', 'Green', 'Red', 'Other']
 const COLOR_LABELS: Record<TeamColor, string> = { Pink: 'ורוד', Blue: 'כחול', Yellow: 'צהוב', Green: 'ירוק', Red: 'אדום', Other: 'אחר' }
+const COLOR_DOT: Record<TeamColor, string> = { Pink: 'bg-pink-500', Blue: 'bg-blue-400', Yellow: 'bg-yellow-400', Green: 'bg-green-500', Red: 'bg-red-500', Other: 'bg-slate-500' }
 function todayStr() { return new Date().toISOString().split('T')[0] }
 
 type PanelFilter = 'all' | 'last'
@@ -165,6 +167,10 @@ export function LeaderboardPage() {
       ? fmtDate(filteredHistory[0].match_date)
       : t('overall')
 
+  const currentSessionDate =
+    panelSession?.data.match_date ?? (panelFilter === 'last' ? filteredHistory[0]?.match_date : null) ?? null
+  const teamRanks = useSessionTeamRanks(currentSessionDate)
+
   return (
     <div className="min-h-screen bg-bg pb-nav">
       <div className="px-4 pt-12 pb-4">
@@ -237,6 +243,17 @@ export function LeaderboardPage() {
           {/* Label + pills */}
           <div className="flex flex-col items-center gap-2 mb-3">
             <p className="text-xs text-accent font-medium">{pillLabel}</p>
+            {isSession && src.team_color && (
+              <div className="flex items-center gap-1.5">
+                <span className={`w-2.5 h-2.5 rounded-full ${COLOR_DOT[src.team_color as TeamColor] ?? 'bg-slate-500'}`} />
+                <span className="text-xs text-slate-300">
+                  צבע קבוצה: {COLOR_LABELS[src.team_color as TeamColor] ?? src.team_color}
+                  {teamRanks[src.team_color] !== undefined && (
+                    <span className="text-accent font-semibold"> ({teamRanks[src.team_color]})</span>
+                  )}
+                </span>
+              </div>
+            )}
             <div className="flex flex-wrap gap-2 justify-center">
               <StatPill label={t('goals')}        value={isSession ? src.goals       : selectedPlayer.total_goals}   color="#22C55E" />
               <StatPill label={t('assists')}      value={isSession ? src.assists      : selectedPlayer.total_assists} color="#06C8E0" />
