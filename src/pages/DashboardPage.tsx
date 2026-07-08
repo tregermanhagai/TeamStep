@@ -32,8 +32,10 @@ export function DashboardPage() {
   const [reportCS,         setReportCS]         = useState(0)
   const [reportColor,      setReportColor]      = useState<TeamColor>('Other')
   const [reportMatchId,    setReportMatchId]    = useState<string | null>(null)
+  const [reportExists,     setReportExists]     = useState(false)
   const [reportSubmitting, setReportSubmitting] = useState(false)
   const [reportSaved,      setReportSaved]      = useState(false)
+  const [reportResetting,  setReportResetting]  = useState(false)
   const { player } = useSession()
   const { data: leaderboard, loading: lbLoading } = useLeaderboard()
   const { data: history, loading: histLoading, refetch: refetchHistory } = useMyStats(player?.player_id)
@@ -87,12 +89,33 @@ export function DashboardPage() {
       .eq('match_id', matchId)
       .maybeSingle()
     if (report) {
+      setReportExists(true)
       setReportGoals(report.goals ?? 0)
       setReportAssists(report.assists ?? 0)
       setReportWon(report.team_won ?? 0)
       setReportCS(report.clean_sheet ?? 0)
       setReportColor((report.team_color ?? 'Other') as TeamColor)
+    } else {
+      setReportExists(false)
     }
+  }
+
+  async function resetReport() {
+    if (!player || !reportMatchId) return
+    setReportResetting(true)
+    await supabase.from('reports')
+      .delete()
+      .eq('player_id', player.player_id)
+      .eq('match_id', reportMatchId)
+    setReportGoals(0)
+    setReportAssists(0)
+    setReportWon(0)
+    setReportCS(0)
+    setReportColor('Other')
+    setReportExists(false)
+    setReportSaved(false)
+    setReportResetting(false)
+    refetchHistory()
   }
 
   async function submitReport() {
@@ -111,6 +134,7 @@ export function DashboardPage() {
     }, { onConflict: 'player_id,match_id' })
     setReportSubmitting(false)
     setReportSaved(true)
+    setReportExists(true)
     refetchHistory()
     setTimeout(() => setReportSaved(false), 2500)
   }
@@ -259,13 +283,24 @@ export function DashboardPage() {
           ))}
         </div>
         {reportSaved && <p className="text-green-400 text-xs mb-2 text-center">נשמר בהצלחה ✓</p>}
-        <button
-          onClick={submitReport}
-          disabled={reportSubmitting || !reportMatchId}
-          className="w-full bg-accent text-bg text-sm font-bold py-2.5 rounded-xl active:scale-95 transition-all disabled:opacity-50"
-        >
-          {reportSubmitting ? 'שומר...' : 'שמור נתוני אימון'}
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={submitReport}
+            disabled={reportSubmitting || !reportMatchId}
+            className="flex-1 bg-accent text-bg text-sm font-bold py-2.5 rounded-xl active:scale-95 transition-all disabled:opacity-50"
+          >
+            {reportSubmitting ? 'שומר...' : 'שמור נתוני אימון'}
+          </button>
+          {reportExists && (
+            <button
+              onClick={resetReport}
+              disabled={reportResetting}
+              className="px-4 py-2.5 bg-slate-700 text-red-400 text-sm font-medium rounded-xl active:scale-95 transition-all disabled:opacity-50"
+            >
+              {reportResetting ? '...' : 'מחק'}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Mini leaderboard */}

@@ -109,6 +109,15 @@ export function TeamScoringPage() {
     if (data) setAllPlayers(data)
   }
 
+  async function removePlayerFromTeam(playerId: string) {
+    const { error: err } = await supabase.rpc('admin_remove_attendance', {
+      p_player_id:  playerId,
+      p_match_date: date,
+    })
+    if (err) console.error('[removePlayerFromTeam]', err)
+    await loadReports(date)
+  }
+
   async function addPlayerToTeam(playerId: string, color: TeamColor) {
     setAddingToColor(color)
     const { error: err } = await supabase.rpc('admin_save_attendance', {
@@ -216,12 +225,19 @@ export function TeamScoringPage() {
                     )}
                     <div className="flex flex-col gap-0.5 mb-2">
                       {entries.map(e => (
-                        <p key={e.id} className="text-xs text-slate-300 py-0.5">
-                          • {e.name}
-                          {trainerLabel(e.name, locale) && (
-                            <span className="ml-1 text-slate-500">{trainerLabel(e.name, locale)}</span>
-                          )}
-                        </p>
+                        <div key={e.id} className="flex items-center justify-between gap-2">
+                          <p className="text-xs text-slate-300 py-0.5">
+                            • {e.name}
+                            {trainerLabel(e.name, locale) && (
+                              <span className="ml-1 text-slate-500">{trainerLabel(e.name, locale)}</span>
+                            )}
+                          </p>
+                          <button
+                            onClick={() => removePlayerFromTeam(e.id)}
+                            className="text-slate-600 hover:text-red-400 text-sm leading-none flex-shrink-0 transition-colors"
+                            title="הסר מהקבוצה"
+                          >×</button>
+                        </div>
                       ))}
                     </div>
                     {/* Add existing player dropdown */}
