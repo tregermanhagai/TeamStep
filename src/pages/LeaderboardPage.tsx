@@ -63,6 +63,7 @@ export function LeaderboardPage() {
   const [adminStats, setAdminStats] = useState({ goals: 0, assists: 0, teamWon: 0, cleanSheet: 0, color: 'Other' as TeamColor })
   const [adminSaving, setAdminSaving] = useState(false)
   const [adminSaved, setAdminSaved] = useState(false)
+  const [deletingSession, setDeletingSession] = useState(false)
 
   useEffect(() => {
     setAdminSaved(false)
@@ -88,6 +89,18 @@ export function LeaderboardPage() {
     } else {
       setAdminStats({ goals: 0, assists: 0, teamWon: 0, cleanSheet: 0, color: 'Other' })
     }
+  }
+
+  async function deleteSessionReport() {
+    if (!selectedPlayer || !panelSession) return
+    setDeletingSession(true)
+    await supabase.rpc('admin_remove_attendance', {
+      p_player_id:  selectedPlayer.player_id,
+      p_match_date: panelSession.data.match_date,
+    })
+    setDeletingSession(false)
+    setPanelSession(null)
+    refetchStats()
   }
 
   async function saveAdminReport() {
@@ -246,6 +259,17 @@ export function LeaderboardPage() {
                 setPanelSession((prev) => prev?.index === index ? null : { data: session, index })
               }
             />
+          )}
+
+          {/* Admin: delete selected session */}
+          {isAdmin && panelSession && (
+            <button
+              onClick={deleteSessionReport}
+              disabled={deletingSession}
+              className="mt-2 w-full py-2 text-xs text-red-400 font-medium bg-red-400/10 rounded-xl active:scale-95 transition-all disabled:opacity-50"
+            >
+              {deletingSession ? '...' : `מחק אימון ${fmtDate(panelSession.data.match_date)}`}
+            </button>
           )}
 
           {/* Admin inline report — always shown for admins */}
