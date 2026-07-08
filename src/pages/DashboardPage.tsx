@@ -217,7 +217,7 @@ export function DashboardPage() {
               <div className="flex items-center gap-1.5">
                 <span className={`w-2.5 h-2.5 rounded-full ${COLOR_DOT[src.team_color as TeamColor] ?? 'bg-slate-500'}`} />
                 <span className="text-xs text-slate-300">
-                  צבע קבוצה: {t(COLOR_KEY[src.team_color as TeamColor] ?? 'colorOther')}
+                  {t('teamColorLabel')} {t(COLOR_KEY[src.team_color as TeamColor] ?? 'colorOther')}
                   {teamRanks[src.team_color] !== undefined && (
                     <span className="text-accent font-semibold"> ({teamRanks[src.team_color]})</span>
                   )}
