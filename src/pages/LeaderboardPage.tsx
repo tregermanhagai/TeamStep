@@ -305,6 +305,7 @@ export function LeaderboardPage() {
                   const ls = lastSessionMap[p.player_id]
                   return ls ? { goals: ls.goals, assists: ls.assists, wins: ls.team_won, points: ls.session_pts } : { goals: 0, assists: 0, wins: 0, points: 0 }
                 })() : undefined}
+                showPracticeCount={panelFilter === 'all'}
               />
             ))}
       </div>

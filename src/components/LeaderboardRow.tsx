@@ -16,11 +16,12 @@ interface Props {
   sortBy?: SortBy
   onClick?: () => void
   sessionStats?: SessionStats
+  showPracticeCount?: boolean
 }
 
 const RANK_COLORS: Record<number, string> = { 1: '#FFD700', 2: '#C0C0C0', 3: '#CD7F32' }
 
-export function LeaderboardRow({ rank, player, isMe, isSelected, sortBy = 'points', onClick, sessionStats }: Props) {
+export function LeaderboardRow({ rank, player, isMe, isSelected, sortBy = 'points', onClick, sessionStats, showPracticeCount }: Props) {
   const { locale } = useLocale()
   const rankColor = RANK_COLORS[rank] ?? '#64748B'
   const goals   = sessionStats?.goals   ?? player.total_goals
@@ -63,7 +64,10 @@ export function LeaderboardRow({ rank, player, isMe, isSelected, sortBy = 'point
 
       <div className="flex items-center gap-3 text-xs text-slate-400">
         <span title="Goals">⚽ {goals}</span>
-        <span title="Assists">🎯 {assists}</span>
+        {showPracticeCount
+          ? <span title="Practices">🏃 {player.matches_played ?? 0}</span>
+          : <span title="Assists">🎯 {assists}</span>
+        }
       </div>
 
       <span className="font-bold text-white text-sm w-14 text-right">

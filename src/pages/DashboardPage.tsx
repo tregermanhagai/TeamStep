@@ -321,6 +321,7 @@ export function DashboardPage() {
                 player={p}
                 isMe={p.player_id === player?.player_id}
                 onClick={() => navigate('/leaderboard', { state: { selectedPlayerId: p.player_id } })}
+                showPracticeCount
               />
             ))}
           </div>
