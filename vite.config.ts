@@ -1,14 +1,13 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
-import { execSync } from 'child_process'
+import { readFileSync } from 'fs'
 
-const commitCount = execSync('git rev-list --count HEAD').toString().trim()
-const appVersion = `0.1.${commitCount}`
+const { version } = JSON.parse(readFileSync('./package.json', 'utf-8'))
 
 export default defineConfig({
   define: {
-    __APP_VERSION__: JSON.stringify(appVersion),
+    __APP_VERSION__: JSON.stringify(version),
   },
   plugins: [
     react(),
