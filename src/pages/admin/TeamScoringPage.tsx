@@ -114,8 +114,14 @@ export function TeamScoringPage() {
       p_player_id:  playerId,
       p_match_date: date,
     })
-    if (err) console.error('[removePlayerFromTeam]', err)
-    await loadReports(date)
+    if (err) { console.error('[removePlayerFromTeam]', err); return }
+    setTeamPlayerMap(prev => {
+      const next = { ...prev }
+      for (const color of COLORS) {
+        next[color] = prev[color].filter(e => e.id !== playerId)
+      }
+      return next
+    })
   }
 
   async function addPlayerToTeam(playerId: string, color: TeamColor) {
