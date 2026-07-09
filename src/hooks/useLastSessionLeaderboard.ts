@@ -25,16 +25,31 @@ export function useLastSessionLeaderboard(date?: string | null) {
   }, [date])
 
   async function loadLatest() {
-    // Inner join ensures we only get matches that have at least one report
-    const { data: match } = await supabase
+    // Get the 20 most-recent matches by date, then check which ones have reports.
+    // We can't just take the latest match because find_or_create_match creates an
+    // empty match for today on every dashboard load.
+    const { data: recentMatches } = await supabase
       .from('matches')
-      .select('match_id, reports!inner(match_id)')
+      .select('match_id')
       .order('match_date', { ascending: false })
-      .limit(1)
-      .maybeSingle()
+      .limit(20)
 
-    if (!match) return
-    await loadByMatchId(match.match_id)
+    if (!recentMatches || recentMatches.length === 0) return
+
+    const ids = recentMatches.map(m => m.match_id)
+    const { data: reportRows } = await supabase
+      .from('reports')
+      .select('match_id')
+      .in('match_id', ids)
+
+    if (!reportRows || reportRows.length === 0) return
+
+    const withReports = new Set(reportRows.map(r => r.match_id))
+    // recentMatches is already sorted newest-first, so the first hit is the latest real session
+    const target = recentMatches.find(m => withReports.has(m.match_id))
+    if (!target) return
+
+    await loadByMatchId(target.match_id)
   }
 
   async function loadByDate(targetDate: string) {
