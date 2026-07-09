@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { useLocale } from '../contexts/LocaleContext'
 import { useSession } from '../hooks/useSession'
 import { useLeaderboard } from '../hooks/useLeaderboard'
@@ -159,10 +159,10 @@ export function DashboardPage() {
         </div>
         <div className="flex items-stretch gap-2">
           {myRank && (
-            <div className="bg-card rounded-2xl px-3 py-1.5 text-center flex flex-col justify-center">
+            <Link to="/leaderboard" className="bg-card rounded-2xl px-3 py-1.5 text-center flex flex-col justify-center hover:bg-slate-700/50 transition-colors">
               <p className="text-xs text-slate-400">{t('rank')}</p>
               <p className="text-accent font-bold text-lg leading-none">#{myRank}</p>
-            </div>
+            </Link>
           )}
           <button
             onClick={() => setShowInfo(true)}
