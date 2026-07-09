@@ -9,23 +9,48 @@ export type LastSessionStat = {
   session_pts: number
 }
 
-export function useLastSessionLeaderboard() {
+// date = undefined  → find latest match that actually has reports (for LeaderboardPage)
+// date = null       → history still loading, do nothing
+// date = 'YYYY-MM-DD' → load that specific session (for DashboardPage "Last Practice")
+export function useLastSessionLeaderboard(date?: string | null) {
   const [data, setData] = useState<Record<string, LastSessionStat>>({})
 
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    if (date === null) return        // loading, wait
+    if (date === undefined) {
+      loadLatest()                   // LeaderboardPage: auto-detect
+    } else {
+      loadByDate(date)               // DashboardPage: use known date
+    }
+  }, [date])
 
-  async function load() {
+  async function loadLatest() {
+    // Inner join ensures we only get matches that have at least one report
     const { data: match } = await supabase
       .from('matches')
-      .select('match_id')
+      .select('match_id, reports!inner(match_id)')
       .order('match_date', { ascending: false })
       .limit(1)
       .maybeSingle()
 
     if (!match) return
+    await loadByMatchId(match.match_id)
+  }
 
+  async function loadByDate(targetDate: string) {
+    const { data: match } = await supabase
+      .from('matches')
+      .select('match_id')
+      .eq('match_date', targetDate)
+      .maybeSingle()
+
+    if (!match) return
+    await loadByMatchId(match.match_id)
+  }
+
+  async function loadByMatchId(matchId: string) {
     const [{ data: reports }, { data: settings }] = await Promise.all([
-      supabase.from('reports').select('*').eq('match_id', match.match_id),
+      supabase.from('reports').select('*').eq('match_id', matchId),
       supabase.from('scoring_settings').select('*').single(),
     ])
 
@@ -38,9 +63,9 @@ export function useLastSessionLeaderboard() {
         assists:     r.assists     ?? 0,
         team_won:    r.team_won    ?? 0,
         clean_sheet: r.clean_sheet ?? 0,
-        session_pts: (r.goals ?? 0)       * settings.goal_pts  +
-                     (r.assists ?? 0)     * settings.assist_pts +
-                     (r.team_won ?? 0)    * settings.win_pts    +
+        session_pts: (r.goals       ?? 0) * settings.goal_pts        +
+                     (r.assists     ?? 0) * settings.assist_pts      +
+                     (r.team_won    ?? 0) * settings.win_pts         +
                      (r.clean_sheet ?? 0) * settings.clean_sheet_pts,
       }
     })

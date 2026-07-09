@@ -60,7 +60,10 @@ export function DashboardPage() {
 
   const filteredHistory = filter === 'last' ? history.slice(-1) : history
 
-  const { data: lastSessionMap } = useLastSessionLeaderboard()
+  // Use the date of the user's actual last session so we compare against all players on that day,
+  // not against today's empty match created by find_or_create_match.
+  const lastSessionDate = filter === 'last' ? (history.slice(-1)[0]?.match_date ?? null) : null
+  const { data: lastSessionMap } = useLastSessionLeaderboard(lastSessionDate)
   const lastSessionValues = Object.values(lastSessionMap)
   const lastSessionUserPts = filteredHistory[0]?.match_pts ?? 0
   const lastSessionMaxPts  = lastSessionValues.length > 0 ? Math.max(...lastSessionValues.map(s => s.session_pts)) : 0
