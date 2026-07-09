@@ -99,7 +99,11 @@ export function ProfilePage() {
             </div>
           )}
           <p className="text-slate-400 text-sm">{session?.user?.email}</p>
-          {myRank && <p className="text-accent text-sm font-medium mt-1">{t('rank')} #{myRank}</p>}
+          {myRank && (
+            <Link to="/leaderboard" className="text-accent text-sm font-medium mt-1 underline underline-offset-2 hover:text-accent/80">
+              {t('rank')} #{myRank}
+            </Link>
+          )}
         </div>
       </div>
 
