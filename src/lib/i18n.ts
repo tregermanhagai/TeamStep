@@ -159,7 +159,7 @@ export const translations = {
     colorRed:             'אדום',
     colorOther:           'אחר',
     accessibility:        'נגישות',
-    teamColorLabel:       ':צבע קבוצה',
+    teamColorLabel:       'צבע קבוצה:',
     todaySession:         'נתוני האימון שלי היום',
     statGoal:             'שער',
     statAssist:           'בישול',

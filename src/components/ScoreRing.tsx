@@ -42,14 +42,16 @@ export function ScoreRing({ userPoints, teamAvg, maxPoints }: Props) {
 
       <div className="absolute flex flex-col items-center">
         <motion.span
-          className="text-4xl font-bold text-white"
+          className="text-4xl font-bold text-white leading-none"
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
         >
           {userPoints}
         </motion.span>
-        <span className="text-xs text-slate-400 mt-0.5">{t('pts')}</span>
+        <span className="text-sm text-slate-400 mt-1">
+          / {maxPoints} <span className="text-xs">{t('pts')}</span>
+        </span>
         <span className="text-xs text-slate-500 mt-1">
           {t('avg')} <span className="text-accent font-medium">{Math.round(teamAvg)}</span>
         </span>
