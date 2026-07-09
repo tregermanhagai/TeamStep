@@ -137,6 +137,12 @@ export function ReportPage() {
       return
     }
 
+    // Sync wins/CS to the MAX across all teammates on the same color.
+    await supabase.rpc('sync_team_stats', {
+      p_match_id:   matchId,
+      p_team_color: teamColor,
+    })
+
     const customRows = customCategories
       .filter((cat) => (customValues[cat.category_id] ?? 0) > 0)
       .map((cat) => ({

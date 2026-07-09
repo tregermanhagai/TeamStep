@@ -136,6 +136,12 @@ export function DashboardPage() {
       team_color: reportColor,
       updated_at: new Date().toISOString(),
     }, { onConflict: 'player_id,match_id' })
+    // Sync wins/CS to the MAX across all teammates on the same color,
+    // so multiple reporters complement each other rather than override.
+    await supabase.rpc('sync_team_stats', {
+      p_match_id:   reportMatchId,
+      p_team_color: reportColor,
+    })
     setReportSubmitting(false)
     setReportSaved(true)
     setReportExists(true)
