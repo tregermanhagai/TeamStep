@@ -104,7 +104,7 @@ export function ProfilePage() {
       </div>
 
       {me && (
-        <div className="flex gap-3 overflow-x-auto px-4 pb-2">
+        <div className="flex justify-center gap-3 flex-wrap px-4 pb-2">
           <StatPill label={t('points')}  value={me.total_points}   color="#06C8E0" />
           <StatPill label={t('goals')}   value={me.total_goals}    color="#22C55E" />
           <StatPill label={t('assists')} value={me.total_assists}  color="#F59E0B" />
