@@ -34,9 +34,7 @@ export default async function handler(req: any, res: any) {
     ] = await Promise.all([
       supabase
         .from('players')
-        .select('player_id, full_name')
-        .eq('is_active', true)
-        .eq('is_blocked', false),
+        .select('player_id, full_name'),
       supabase
         .from('reports')
         .select('player_id, goals, assists, team_won, clean_sheet'),
