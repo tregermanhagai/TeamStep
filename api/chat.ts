@@ -21,46 +21,42 @@ export default async function handler(req: any, res: any) {
   }
 
   try {
-    const supabase = createClient(supabaseUrl, serviceKey)
     const today = new Date().toISOString().split('T')[0]
 
-    // Query raw tables directly — avoids any view permission issues with service role
-    const [
-      { data: players,         error: pErr  },
-      { data: reports,         error: rErr  },
-      { data: scoringRows,     error: scErr },
-      { data: pastMatches,     error: pmErr },
-      { data: upcomingMatches, error: umErr },
-    ] = await Promise.all([
-      supabase
-        .from('players')
-        .select('player_id, full_name'),
-      supabase
-        .from('reports')
-        .select('player_id, goals, assists, team_won, clean_sheet'),
-      supabase
-        .from('scoring_settings')
-        .select('goal_pts, assist_pts, win_pts, clean_sheet_pts')
-        .limit(1),
-      supabase
-        .from('matches')
-        .select('match_date, label')
-        .lt('match_date', today)
-        .order('match_date', { ascending: false })
-        .limit(5),
-      supabase
-        .from('matches')
-        .select('match_date, label')
-        .gte('match_date', today)
-        .order('match_date', { ascending: true })
-        .limit(5),
-    ])
-
-    if (pErr || rErr || scErr || pmErr || umErr) {
-      console.error('[chat] Supabase errors', { pErr, rErr, scErr, pmErr, umErr })
+    // Use direct REST fetch with service role key — most reliable in serverless context
+    const sbHeaders = {
+      'apikey': serviceKey,
+      'Authorization': `Bearer ${serviceKey}`,
+      'Content-Type': 'application/json',
     }
 
-    const scoring = scoringRows?.[0] ?? null
+    const [playersRes, reportsRes, scoringRes, pastRes, upcomingRes] = await Promise.all([
+      fetch(`${supabaseUrl}/rest/v1/players?select=player_id,full_name`, { headers: sbHeaders }),
+      fetch(`${supabaseUrl}/rest/v1/reports?select=player_id,goals,assists,team_won,clean_sheet`, { headers: sbHeaders }),
+      fetch(`${supabaseUrl}/rest/v1/scoring_settings?select=goal_pts,assist_pts,win_pts,clean_sheet_pts&limit=1`, { headers: sbHeaders }),
+      fetch(`${supabaseUrl}/rest/v1/matches?select=match_date,label&match_date=lt.${today}&order=match_date.desc&limit=5`, { headers: sbHeaders }),
+      fetch(`${supabaseUrl}/rest/v1/matches?select=match_date,label&match_date=gte.${today}&order=match_date.asc&limit=5`, { headers: sbHeaders }),
+    ])
+
+    const [players, reports, scoringRows, pastMatches, upcomingMatches] = await Promise.all([
+      playersRes.json(),
+      reportsRes.json(),
+      scoringRes.json(),
+      pastRes.json(),
+      upcomingRes.json(),
+    ])
+
+    const fetchErrors = [
+      !playersRes.ok && `players: ${playersRes.status} ${JSON.stringify(players)}`,
+      !reportsRes.ok && `reports: ${reportsRes.status} ${JSON.stringify(reports)}`,
+      !scoringRes.ok && `scoring: ${scoringRes.status}`,
+    ].filter(Boolean)
+
+    if (fetchErrors.length) {
+      console.error('[chat] REST errors:', fetchErrors)
+    }
+
+    const scoring = Array.isArray(scoringRows) ? (scoringRows[0] ?? null) : null
 
     // Aggregate per-player stats in JS
     const statsMap: Record<string, {
@@ -68,13 +64,13 @@ export default async function handler(req: any, res: any) {
       wins: number; cs: number; sessions: number; points: number
     }> = {}
 
-    for (const p of players ?? []) {
+    for (const p of (Array.isArray(players) ? players : [])) {
       statsMap[p.player_id] = {
         name: p.full_name, goals: 0, assists: 0, wins: 0, cs: 0, sessions: 0, points: 0,
       }
     }
 
-    for (const r of reports ?? []) {
+    for (const r of (Array.isArray(reports) ? reports : [])) {
       const s = statsMap[r.player_id]
       if (!s) continue
       const g = r.goals ?? 0
@@ -105,8 +101,8 @@ export default async function handler(req: any, res: any) {
         sessions_attended: s.sessions,
       }))
 
-    const dataStatus = pErr
-      ? `ERROR fetching players: ${pErr.message}`
+    const dataStatus = fetchErrors.length
+      ? `ERRORS: ${fetchErrors.join('; ')}`
       : `${leaderboard.length} players loaded`
 
     let scheduleNote = ''
@@ -139,10 +135,10 @@ PLAYER LEADERBOARD (${dataStatus}):
 ${JSON.stringify(leaderboard, null, 2)}
 
 PAST SESSIONS:
-${JSON.stringify(pastMatches ?? [], null, 2)}
+${JSON.stringify(Array.isArray(pastMatches) ? pastMatches : [], null, 2)}
 
 UPCOMING SESSIONS:
-${JSON.stringify(upcomingMatches ?? [], null, 2)}
+${JSON.stringify(Array.isArray(upcomingMatches) ? upcomingMatches : [], null, 2)}
 
 SCORING RULES:
 ${JSON.stringify(scoring ?? {}, null, 2)}
