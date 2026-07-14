@@ -8,7 +8,7 @@ interface Message {
 
 const WELCOME: Message = {
   role: 'assistant',
-  text: 'שלום! שאל אותי על דירוגי שחקנים, נתונים ואימונים 🏆\nHi! Ask me about player rankings, stats and training sessions.',
+  text: 'שאל אותי מתי האימון הבא, או על סטטיסטיקה של האימונים 🏆',
 }
 
 export function ChatWidget() {
