@@ -127,7 +127,7 @@ export function ChatWidget() {
                 value={input}
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={onKeyDown}
-                placeholder="Ask me anything…"
+                placeholder="שאל אותי מתי האימון הבא, או סטטיסטיקה של שחקנים ואימונים"
                 rows={1}
                 maxLength={500}
                 className="flex-1 bg-slate-800 text-white text-xs rounded-xl px-3 py-2 border border-slate-600 focus:outline-none focus:border-accent resize-none placeholder-slate-500"
