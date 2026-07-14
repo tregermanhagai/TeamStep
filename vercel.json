@@ -2,7 +2,7 @@
   "rewrites": [{ "source": "/((?!api/).*)", "destination": "/index.html" }],
   "functions": {
     "api/chat.ts": {
-      "includeFiles": ["next-practice.txt"]
+      "includeFiles": "next-practice.txt"
     }
   }
 }
