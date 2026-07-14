@@ -16,6 +16,7 @@ import { ManagersPage } from './pages/admin/ManagersPage'
 import { ChatPage } from './pages/ChatPage'
 import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage'
 import { BottomNav } from './components/BottomNav'
+import { ChatWidget } from './components/ChatWidget'
 import { supabase } from './lib/supabase'
 
 function AuthGuard({ children, skipOnboardingCheck = false }: {
@@ -96,6 +97,7 @@ export default function App() {
         <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
+      <ChatWidget />
     </BrowserRouter>
     </LocaleProvider>
   )
