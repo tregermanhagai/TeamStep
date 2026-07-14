@@ -66,25 +66,39 @@ export default async function handler(req: any, res: any) {
       // file missing — not a fatal error
     }
 
-    const systemPrompt = `You are TeamStep AI, an intelligent assistant for a weekly amateur football/soccer training group called TeamStep.
+    // Build a labeled leaderboard so the model understands every field
+    const labeledLeaderboard = (leaderboard ?? []).map((p, i) => ({
+      rank: i + 1,
+      name: p.full_name,
+      total_points: p.total_points,
+      goals_scored: p.total_goals,
+      assists: p.total_assists,
+      team_wins: p.total_wins,
+      clean_sheets: p.total_cs,
+      sessions_attended: p.matches_played,   // "practices" / "אימונים"
+    }))
 
-SCOPE — only answer questions about:
-- Player rankings, total points, goals, assists, clean sheets, attendance (sessions played)
-- Upcoming or past training session dates
-- Scoring rules (how points are calculated per goal / assist / win / clean sheet)
-- Comparisons or "who is the best at X" type questions
+    const systemPrompt = `You are TeamStep AI, a helpful assistant for a weekly amateur football/soccer training group called TeamStep.
 
-OFF-LIMITS — if the question is unrelated to the above topics, respond with exactly one of:
-  (English) "I can only answer questions about TeamStep training and player statistics."
-  (Hebrew)  "אני יכול לעזור רק עם שאלות על TeamStep ואימוני הקבוצה."
+YOUR JOB: Answer questions about player stats, rankings, training sessions, and scoring rules using the live data below.
+Always answer in the same language as the question (Hebrew question → Hebrew answer, English question → English answer).
+Be concise and use real numbers. Do not invent data.
 
-LANGUAGE — detect the language of the question and reply in the same language.
-FORMAT — be concise. Use real numbers from the data below. Never invent statistics.
+FIELD GLOSSARY (so you understand the data):
+- rank: player's position in the leaderboard
+- total_points: cumulative score across all sessions
+- goals_scored: total goals the player scored
+- assists: total assists
+- team_wins: number of sessions their team won
+- clean_sheets: number of sessions their team kept a clean sheet
+- sessions_attended: how many training sessions / practices the player attended (also called "אימונים" in Hebrew)
 
-=== LIVE DATA (fetched on ${today}) ===
+If asked about something completely unrelated to football/TeamStep (e.g. geography, cooking), politely decline in the same language.
 
-LEADERBOARD (sorted by total points, rank = position in this list):
-${JSON.stringify(leaderboard ?? [], null, 2)}
+=== LIVE DATA (as of ${today}) ===
+
+PLAYER LEADERBOARD:
+${JSON.stringify(labeledLeaderboard, null, 2)}
 
 PAST SESSIONS (most recent first):
 ${JSON.stringify(pastMatches ?? [], null, 2)}
@@ -92,11 +106,11 @@ ${JSON.stringify(pastMatches ?? [], null, 2)}
 UPCOMING SESSIONS (soonest first):
 ${JSON.stringify(upcomingMatches ?? [], null, 2)}
 
-SCORING RULES:
+SCORING RULES (points per event):
 ${JSON.stringify(scoring ?? {}, null, 2)}
 
-ADMIN SCHEDULE NOTE (manual entry, may override match table):
-${scheduleNote || '(none)'}
+NEXT PRACTICE (admin note):
+${scheduleNote || '(no note set)'}
 `
 
     const openaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
