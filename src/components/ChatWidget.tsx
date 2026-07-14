@@ -70,7 +70,7 @@ export function ChatWidget() {
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700/50 flex-shrink-0">
               <div className="flex items-center gap-2">
-                <span className="text-base">🤖</span>
+                <span className="text-base">⚽</span>
                 <span className="text-sm font-semibold text-white">TeamStep AI</span>
               </div>
               <button
@@ -151,9 +151,9 @@ export function ChatWidget() {
         onClick={() => setOpen(prev => !prev)}
         whileTap={{ scale: 0.9 }}
         className="w-12 h-12 bg-accent rounded-full flex items-center justify-center text-xl shadow-xl"
-        aria-label={open ? 'Close AI chat' : 'Open AI chat'}
+        aria-label={open ? 'Close chat' : 'Open AI chat'}
       >
-        {open ? <span className="text-bg text-sm font-bold">✕</span> : '🤖'}
+        {open ? <span className="text-bg text-sm font-bold">✕</span> : '⚽'}
       </motion.button>
     </div>
   )
