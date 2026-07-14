@@ -33,7 +33,7 @@ export default async function handler(req: any, res: any) {
     ] = await Promise.all([
       supabase
         .from('player_scores')
-        .select('full_name,total_points,total_goals,total_assists,total_wins,total_cs,matches_played')
+        .select('*')
         .order('total_points', { ascending: false })
         .limit(20),
       supabase
@@ -54,9 +54,13 @@ export default async function handler(req: any, res: any) {
         .single(),
     ])
 
-    if (lbErr || pmErr || umErr) {
+    if (lbErr || pmErr || umErr || scErr) {
       console.error('[chat] Supabase errors', { lbErr, pmErr, umErr, scErr })
     }
+
+    const leaderboardStatus = lbErr
+      ? `ERROR: ${lbErr.message}`
+      : `${(leaderboard ?? []).length} players`
 
     let scheduleNote = ''
     try {
@@ -67,7 +71,7 @@ export default async function handler(req: any, res: any) {
     }
 
     // Build a labeled leaderboard so the model understands every field
-    const labeledLeaderboard = (leaderboard ?? []).map((p, i) => ({
+    const labeledLeaderboard = (leaderboard ?? []).map((p: any, i: number) => ({
       rank: i + 1,
       name: p.full_name,
       total_points: p.total_points,
@@ -97,7 +101,7 @@ If asked about something completely unrelated to football/TeamStep (e.g. geograp
 
 === LIVE DATA (as of ${today}) ===
 
-PLAYER LEADERBOARD:
+PLAYER LEADERBOARD (status: ${leaderboardStatus}):
 ${JSON.stringify(labeledLeaderboard, null, 2)}
 
 PAST SESSIONS (most recent first):
